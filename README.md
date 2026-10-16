@@ -16,7 +16,7 @@ las rutas públicas y todo el diseño.
 | Hosting | Cloudflare Pages |
 | Base | D1 (`baterias`, `textos`) |
 | Fotos | R2, servidas por `/fotos/*` |
-| JS en el cliente | ~10 KB sin comprimir. Cero dependencias |
+| JS en el cliente | ~19 KB sin comprimir, sin contar el mapa (Leaflet, 150 KB, perezoso) |
 
 ## Comandos
 
@@ -36,8 +36,8 @@ Para entrar al panel en local hace falta un `.dev.vars` (copiar de `.dev.vars.ex
 ### Una sola página
 
 `src/pages/index.astro` es todo el sitio público: hace **una** consulta a D1
-(`getAllBaterias`) y de ahí salen el hero, la franja de beneficios, el catálogo entero,
-el catálogo y el mapa. Las secciones son anclas (`#catalogo`, `#donde`), no rutas.
+(`getAllBaterias`) y de ahí salen la franja de beneficios, el catálogo entero y el
+mapa de sucursales. Las secciones son anclas (`#catalogo`, `#donde`), no rutas.
 
 Consecuencia importante: **el filtrado es del lado del cliente**. Cada tarjeta lleva un
 `data-buscar` precalculado en el servidor (`textoBuscable()` en `src/lib/catalog.ts`) y
@@ -147,6 +147,30 @@ solo porque el panel `/admin` (fuera de este reskin) todavía los usa.
 - **Los tiles del mapa van en grayscale** (`.leaflet-tile-pane` en `global.css`).
   OpenStreetMap a todo color terminaba siendo lo más colorido de la página y le
   competía a los pines, que son lo único que hay que mirar ahí.
+- **El header lleva el contacto, no el carrito.** Instagram y el WhatsApp de la casa
+  central (con el número a la vista desde `lg`), y los dos links de navegación adentro
+  de una cápsula donde la sección que se está mirando se pinta amarilla — un
+  IntersectionObserver sobre `#catalogo` y `#donde` mueve esa pastilla. El carrito
+  salió de ahí: estaba tres veces en pantalla, y quedan el botón flotante en
+  escritorio y la barra de pedido en celular, que además muestra el total.
+- **La franja de beneficios no se mueve.** Fue una cinta y el formato contradecía al
+  contenido: una vuelta entera eran 5700px, o sea dos minutos de espera para leer las
+  cinco frases que cierran la venta. Ahora están las cinco a la vez — en fila desde
+  `lg`, pasándose con el dedo abajo de eso — y sobre el **mismo negro del header**, así
+  header y beneficios se leen como un solo bloque y no como dos bandas oscuras de
+  negros distintos apiladas.
+- **El mapa está encerrado en la región de las sucursales** (`minZoom` tomado después
+  de `fitBounds` + `maxBounds` con viscosidad 1, dos niveles de alejamiento). Es un
+  mapa de nueve locales de Misiones, no un atlas. Y como los nombres vienen dibujados
+  adentro del PNG del tile, alejándose aparecía "Falkland Islands" sin ninguna forma de
+  cambiarlo desde el código; lo que sí se decide es hasta dónde llega el mapa.
+- **Nada se levanta ni cambia de posición al hover** — eso es la marca de casa de las
+  plantillas. Lo que se mueve es la luz y el color: los botones negros se llenan de
+  amarillo desde la izquierda (es el **fondo del botón**, no un pseudo-elemento: el
+  pseudo se recortaba contra el `overflow-hidden` y dejaba asomar el negro en el píxel
+  antialiaseado de las esquinas), la pastilla del nav se desliza, y la grilla entra en
+  cascada de a 55ms por tarjeta, cortada en la octava. Con `prefers-reduced-motion` no
+  se mueve nada.
 - **Sin Hero.** La página no tiene una sección de bienvenida con foto grande: arranca
   en header → beneficios → catálogo, igual que el mockup (que es solo la vista de
   catálogo). `Donde.astro` sí se mantiene — es contenido real que el mockup no
@@ -192,14 +216,15 @@ por modelo de auto no encuentra nada hasta que las completen.
 
 1. **Precios y aplicaciones.** Ver arriba: sin precio el carrito no aplica; sin
    aplicación el buscador por vehículo no sirve.
-2. **WhatsApp.** `src/data/config.ts` tiene `5490000000000` de placeholder. Sin el
-   número real, los pedidos no llegan a ningún lado.
-3. **Dirección y horarios.** Ídem, están como PLACEHOLDER y alimentan el mapa.
-4. **Logo.** `LogoChiply.astro` sigue siendo tipográfico (sin archivo de imagen), pero
-   ya calca la identidad real del mockup del cliente — no es un placeholder genérico.
-   Si llega un archivo de marca definitivo (vector o alta resolución), se reemplaza el
-   contenido de ese componente y no hay que tocar nav, footer ni panel.
-5. **Cloudflare.** La cuenta y el dominio van a nombre de Chiply (la Opción A del
+2. **Confirmar los datos de contacto.** Ya no son placeholders: `src/data/config.ts`
+   trae el WhatsApp, la dirección y los horarios de la casa central, y
+   `src/data/locales.ts` los nueve locales con sus teléfonos y coordenadas. Falta que
+   Chiply los confirme uno por uno — un número mal cargado no da error en ningún lado,
+   simplemente los pedidos no llegan.
+3. **Logo.** `LogoChiply.astro` usa `public/logo-chiply.png`, recortado del mockup del
+   cliente a resolución nativa 3x. Si llega el archivo de marca definitivo (vector o
+   alta resolución), se reemplaza el PNG y no hay que tocar el componente ni sus usos.
+4. **Cloudflare.** La cuenta y el dominio van a nombre de Chiply (la Opción A del
    presupuesto no incluye hosting). Falta crear D1 y R2 ahí y completar el
    `database_id` de `wrangler.toml`.
 
