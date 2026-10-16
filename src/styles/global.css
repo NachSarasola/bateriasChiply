@@ -23,10 +23,16 @@ body.cart-open {
 }
 
 /* El ancla de cada sección tiene que frenar debajo del nav fijo, no atrás. */
+/* El root manda sobre TODA la escala: cada rem de Tailwind (tipografia, spacing,
+   anchos) se mide contra este valor. Estuvo en 15px y eso encogia el sistema
+   entero un 6,7% -- `text-base` renderizaba 15px cuando el token documenta 16, y
+   `seccion` 30px en vez de 32. Los valores del mockup estan en px y se escribieron
+   como rem: con el root en 16 vuelven a ser los que se midieron. */
 html {
-  font-size: 15px;
+  font-size: 16px;
   scroll-behavior: smooth;
-  scroll-padding-top: 4.5rem;
+  /* Alto real del header sticky (logo h-12 + py-3.5) con algo de aire. */
+  scroll-padding-top: 5.5rem;
 }
 
 * {
@@ -122,6 +128,31 @@ select {
   }
 }
 
+/* ---- Relleno del botón principal ----
+   El amarillo entra como una barra que crece desde la izquierda y el texto se da
+   vuelta a negro: el mismo par de colores de la píldora activa del catálogo,
+   puesto en movimiento.
+
+   Es el fondo del propio botón —un gradiente de dos mitades duras que se corre—
+   y no un pseudo-elemento encima. Con el pseudo, el recorte contra el
+   `overflow-hidden` dejaba asomar el negro del botón en el píxel antialiaseado
+   de las esquinas redondeadas: el borde no terminaba de ser amarillo nunca. Así
+   el color y la imagen se recortan juntos contra el mismo radio y no queda nada
+   oscuro debajo. */
+.btn-relleno {
+  background-image: linear-gradient(to right, #fff112 50%, transparent 50%);
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  transition:
+    background-position 300ms ease-out,
+    color 200ms ease-out;
+}
+.btn-relleno:hover:not(:disabled),
+.btn-relleno:active:not(:disabled) {
+  background-position: 0 0;
+  color: #030303;
+}
+
 /* ---- Aparición al scrollear ----
    Mismo vocabulario que paso-adelante (opacidad + una traslación chica) aplicado
    a bloques enteros. [data-reveal] por sí solo NO oculta nada: si el script del
@@ -146,35 +177,19 @@ select {
   }
 }
 
-/* ---- Cinta de beneficios ----
-   Dos grupos idénticos en una pista: al correr la pista -50% (un grupo entero) el
-   ciclo reinicia sin salto visible. Pausa si el mouse o el foco están encima. */
-.cinta {
-  overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+/* Un bloque marcado como `escalonado` no se anima él: se animan sus hijos, cada
+   uno con el retraso que le puso el servidor en `--retraso`. Es la diferencia
+   entre una grilla que aparece de golpe y una que se arma en cascada. El retraso
+   es corto a propósito: la cascada tiene que leerse como una sola entrada. */
+[data-reveal='escalonado'].visto {
+  animation: none;
 }
-.cinta-pista {
-  display: flex;
-  width: max-content;
-  animation: cinta 70s linear infinite;
-}
-.cinta-grupo {
-  display: flex;
-  flex-shrink: 0;
-}
-.cinta:hover .cinta-pista,
-.cinta:focus-within .cinta-pista {
-  animation-play-state: paused;
-}
-@keyframes cinta {
-  to {
-    transform: translateX(-50%);
-  }
+[data-reveal='escalonado'].visto > * {
+  animation: aparece 450ms cubic-bezier(0.2, 0, 0.2, 1) both;
+  animation-delay: var(--retraso, 0ms);
 }
 
-/* Quien pidió menos movimiento no recibe ninguno. La cinta no se congela a mitad:
-   se queda quieta con un solo grupo y se scrollea a mano. */
+/* Quien pidió menos movimiento no recibe ninguno. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -185,15 +200,6 @@ select {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-  .cinta {
-    overflow-x: auto;
-  }
-  .cinta-pista {
-    animation: none;
-  }
-  .cinta-grupo[aria-hidden='true'] {
-    display: none;
   }
 }
 
@@ -276,4 +282,24 @@ select {
 [data-scroll-fundido='horizontal'].en-tope-inicio.en-tope-fin {
   mask-image: none;
   -webkit-mask-image: none;
+}
+
+/* ---- Mapa de sucursales ----
+   Los tiles de OpenStreetMap vienen a todo color (verdes, rosas, rutas rojas) y
+   terminaban siendo lo mas colorido de una pagina que es negra, gris y amarilla:
+   le competian a los pines, que son justamente lo que hay que mirar. En gris el
+   mapa vuelve a ser el fondo y el unico color de la seccion son los pines. Va
+   sobre el panel de tiles y no sobre el mapa entero: los marcadores, los
+   controles y la atribucion viven en otros panes y conservan su color. */
+.leaflet-tile-pane {
+  filter: grayscale(1) contrast(0.92) brightness(1.04);
+}
+
+/* Foco visible propio. `currentColor` siempre contrasta contra el fondo sobre el
+   que ya se esta leyendo ese texto: amarillo en las pildoras negras, tinta sobre
+   la tarjeta blanca. Sin esto el unico foco era el del navegador, y el buscador
+   lo tenia apagado con outline-none. */
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }

@@ -51,7 +51,7 @@ export function buildConfig(T: Record<string, string>) {
     whatsapp: normalizarWhatsapp(txt(T, 'whatsapp', '5493755631664')),
     telefono: txt(T, 'telefono', '3755-631664'),
     email: txt(T, 'email', ''),
-    instagramHandle: txt(T, 'instagram', '@bateriaschiply'),
+    instagramHandle: txt(T, 'instagram', '@chiplybaterias'),
     get instagram(): string {
       return `https://www.instagram.com/${this.instagramHandle.replace('@', '')}/`;
     },
@@ -71,7 +71,7 @@ export function buildConfig(T: Record<string, string>) {
   };
 
   /**
-   * La cinta de beneficios debajo del header. Cada ítem es "titulo :: bajada" en una
+   * La franja de beneficios debajo del header. Cada ítem es "titulo :: bajada" en una
    * sola celda del panel, y los ítems se separan con |.
    */
   const BENEFICIOS = lista(T, 'beneficios', [

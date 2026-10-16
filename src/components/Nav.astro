@@ -1,6 +1,6 @@
 ---
 import LogoChiply from './LogoChiply.astro';
-import { whatsappLink, buildGeneralMessage } from '../lib/whatsapp';
+import { whatsappLink, buildGeneralMessage, formatearWhatsapp } from '../lib/whatsapp';
 
 const { SITE } = Astro.locals.config;
 const wa = whatsappLink(buildGeneralMessage(), SITE.whatsapp);
@@ -17,7 +17,6 @@ const wa = whatsappLink(buildGeneralMessage(), SITE.whatsapp);
 const NAV = [
   { href: '#catalogo', label: 'Catálogo' },
   { href: '#donde', label: 'Sucursales' },
-  { href: wa, label: 'WhatsApp', externo: true },
 ];
 ---
 
@@ -31,7 +30,7 @@ const NAV = [
   >
   </div>
 
-  <div class="relative mx-auto flex max-w-shell items-center justify-between gap-6 px-4 py-3 sm:px-6 sm:py-3.5">
+  <div class="relative mx-auto flex max-w-shell items-center justify-between gap-6 px-4 sm:px-6 lg:px-10 xl:px-14 py-3 sm:py-3.5">
     <a href="#inicio" data-logo-top class="relative shrink-0 cursor-pointer" aria-label="Ir al inicio">
       <LogoChiply clase="h-10 sm:h-12" />
     </a>
@@ -40,52 +39,135 @@ const NAV = [
         carrito en una pantalla chica, y en el celular ya se navega scrolleando.
         Texto liso (no píldora) para no competirle al carrito, que es el único
         botón "de acción" del header. */}
-    <nav class="hidden items-center gap-6 md:flex">
+    {/* Riel: los dos links sueltos sobre la banda negra quedaban colgados en el
+        aire. Adentro de una capsula tienen sobre que apoyarse, y la seccion que
+        se esta mirando se pinta amarilla -- el mismo par de estados que las
+        pildoras del catalogo (rellena amarilla cuando esta activa, apagada
+        cuando no), asi el sitio tiene un solo lenguaje de pildora. */}
+    <nav class="relative hidden items-center gap-1 rounded-full bg-white/[0.06] p-1 ring-1 ring-white/10 md:flex">
+      {/* La pastilla amarilla es UNA sola y se desliza hasta el link de la seccion
+          que se esta mirando, en vez de prenderse y apagarse en cada uno: asi el
+          nav cuenta el recorrido de la pagina mientras se scrollea. La mide y la
+          mueve el script de abajo, porque el ancho depende del texto. */}
+      <span
+        data-nav-indicador
+        aria-hidden="true"
+        class="pointer-events-none absolute left-1 top-1 h-[calc(100%-0.5rem)] w-0 rounded-full bg-amarillo opacity-0 transition-[transform,width,opacity] duration-300 ease-out"
+      />
       {NAV.map((item) => (
         <a
           href={item.href}
-          target={item.externo ? '_blank' : undefined}
-          rel={item.externo ? 'noopener' : undefined}
-          class="text-sm font-bold text-plata transition-colors hover:text-amarillo"
+          data-nav-link={item.href.slice(1)}
+          class="relative rounded-full px-4 py-2 text-sm font-bold text-plata transition-colors hover:text-amarillo"
         >
           {item.label}
         </a>
       ))}
     </nav>
 
-    <button
-      type="button"
-      data-cart-open
-      aria-label="Ver mi pedido"
-      class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amarillo text-tintaFuerte transition-colors hover:bg-amarilloOscuro active:bg-amarilloOscuro sm:h-11 sm:w-11"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="h-5 w-5 sm:h-6 sm:w-6"
-        aria-hidden="true"
+    {/* Contacto directo. El WhatsApp de la casa central entra con el numero a la
+        vista desde lg; abajo de eso queda el ícono solo, que es lo único que
+        entra al lado del logo en una pantalla chica. El carrito no vive mas
+        aca: en escritorio esta el boton flotante (CartFab) y en celular la
+        barra de pedido (MobileCartBar), que ademas muestra el total. */}
+    <div class="flex shrink-0 items-center gap-1 sm:gap-2">
+      <a
+        href={SITE.instagram}
+        target="_blank"
+        rel="noopener"
+        aria-label={`Instagram de ${SITE.nombre}`}
+        class="flex h-10 w-10 items-center justify-center rounded-full text-plata transition-colors hover:bg-white/10 hover:text-amarillo"
       >
-        <path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.5-1.2L20.5 8H6" />
-        <circle cx="9.5" cy="20" r="1.4" />
-        <circle cx="17.5" cy="20" r="1.4" />
-      </svg>
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="5" />
+          <circle cx="12" cy="12" r="4" />
+          <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      </a>
 
-      {/* El contador lo escribe el render() de CartDrawer, igual que en CartFab. */}
-      <span
-        data-cart-badge
-        class="precio absolute -right-1 -top-1 hidden h-5 min-w-[1.25rem] items-center justify-center rounded-full border-2 border-carbon bg-carbon px-1 text-[11px] font-extrabold text-amarillo"
+      <a
+        href={wa}
+        target="_blank"
+        rel="noopener"
+        aria-label={`WhatsApp de ${SITE.nombre}: ${formatearWhatsapp(SITE.whatsapp)}`}
+        class="flex h-10 items-center gap-2 rounded-full px-2.5 text-plata transition-colors hover:bg-white/10 hover:text-amarillo"
       >
-        0
-      </span>
-    </button>
+        <svg viewBox="0 0 24 24" class="h-5 w-5 shrink-0" fill="currentColor" aria-hidden="true">
+          <path d="M12 2a10 10 0 0 0-8.7 15L2 22l5.2-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.4 0-.5s-.6-1.4-.8-1.9-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.6.6 2.2.7 3 .6a2.5 2.5 0 0 0 1.7-1.2 2 2 0 0 0 .1-1.2c-.1-.1-.3-.2-.6-.3Z" />
+        </svg>
+        <span class="precio hidden text-sm font-extrabold lg:inline">
+          {formatearWhatsapp(SITE.whatsapp)}
+        </span>
+      </a>
+    </div>
   </div>
 </header>
 
 <script>
+  /**
+   * Pinta en el riel del nav la seccion que se esta mirando. El margen de arriba
+   * descuenta el alto del header fijo y el de abajo (-55%) evita que dos
+   * secciones queden activas a la vez: una seccion cuenta recien cuando ocupa la
+   * mitad de arriba de la pantalla. Si hay varias, gana la primera en el orden
+   * del documento, que es la que se esta leyendo.
+   */
+  const enlaces = [...document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]')];
+  const indicador = document.querySelector<HTMLElement>('[data-nav-indicador]');
+  const aVista = new Set<string>();
+  let activo: string | undefined;
+
+  function pintar(): void {
+    activo = enlaces.find((e) => aVista.has(e.dataset.navLink ?? ''))?.dataset.navLink;
+    for (const enlace of enlaces) {
+      const es = enlace.dataset.navLink === activo;
+      enlace.classList.toggle('text-tintaFuerte', es);
+      enlace.classList.toggle('text-plata', !es);
+      enlace.classList.toggle('hover:text-amarillo', !es);
+      if (es) {
+        enlace.setAttribute('aria-current', 'true');
+      } else {
+        enlace.removeAttribute('aria-current');
+      }
+    }
+    moverIndicador();
+  }
+
+  /** La pastilla se mide contra el link: el ancho sale del texto, no de una constante. */
+  function moverIndicador(): void {
+    if (!indicador) return;
+    const enlace = enlaces.find((e) => e.dataset.navLink === activo);
+    if (!enlace) {
+      indicador.style.opacity = '0';
+      return;
+    }
+    // offsetLeft ya viene medido contra el <nav>, que es el que tiene `relative`.
+    indicador.style.transform = `translateX(${enlace.offsetLeft - 4}px)`;
+    indicador.style.width = `${enlace.offsetWidth}px`;
+    indicador.style.opacity = '1';
+  }
+
+  window.addEventListener('resize', moverIndicador);
+  // Las fuentes propias cambian el ancho del texto al terminar de cargar.
+  document.fonts?.ready.then(moverIndicador);
+
+  if (enlaces.length > 0 && 'IntersectionObserver' in window) {
+    const observador = new IntersectionObserver(
+      (entradas) => {
+        for (const entrada of entradas) {
+          const id = entrada.target.id;
+          if (entrada.isIntersecting) aVista.add(id);
+          else aVista.delete(id);
+        }
+        pintar();
+      },
+      { rootMargin: '-96px 0px -55% 0px', threshold: 0 },
+    );
+    for (const enlace of enlaces) {
+      const seccion = document.getElementById(enlace.dataset.navLink ?? '');
+      if (seccion) observador.observe(seccion);
+    }
+  }
+
   document.querySelectorAll<HTMLElement>('[data-logo-top]').forEach((logo) => {
     logo.addEventListener('click', (e) => {
       e.preventDefault();

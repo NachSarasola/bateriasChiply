@@ -70,8 +70,8 @@ Una batería sin foto no queda rota: muestra un dibujo gris hasta que le cargues
 
 ## Los textos de la página
 
-**Textos** cambia todo lo escrito: el título grande, la franja de beneficios, los pasos
-para comprar, la dirección, los horarios, el WhatsApp.
+**Textos** cambia todo lo escrito: el título del catálogo y su bajada, la franja de
+beneficios, los medios de pago, la dirección, los horarios, el WhatsApp.
 
 Dos detalles:
 

@@ -1,5 +1,5 @@
 ---
-import { whatsappLink, buildGeneralMessage } from '../lib/whatsapp';
+import { whatsappLink, buildGeneralMessage, formatearWhatsapp } from '../lib/whatsapp';
 import LogoChiply from './LogoChiply.astro';
 
 /**
@@ -12,12 +12,6 @@ const { MEDIOS_DE_PAGO, SITE } = Astro.locals.config;
 const consulta = whatsappLink(buildGeneralMessage(), SITE.whatsapp);
 const anio = new Date().getFullYear();
 
-/** "5492901123456" -> "290 1123456", solo para que se lea como teléfono. */
-function formatearWhatsapp(numero: string): string {
-  const sinPrefijo = numero.replace(/^549/, '');
-  return sinPrefijo.length > 4 ? `${sinPrefijo.slice(0, 4)} ${sinPrefijo.slice(4)}` : sinPrefijo;
-}
-
 const iconoPlaca =
   'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amarillo text-tintaFuerte';
 ---
@@ -29,7 +23,7 @@ const iconoPlaca =
   >
   </div>
 
-  <div class="relative mx-auto max-w-shell px-4 py-10 sm:px-7">
+  <div class="relative mx-auto max-w-shell px-4 sm:px-6 lg:px-10 xl:px-14 py-10">
     <div class="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-6">
       <a href="#inicio" data-logo-top class="cursor-pointer" aria-label="Ir al inicio">
         <LogoChiply clase="h-12 sm:h-14" />
@@ -108,7 +102,7 @@ const iconoPlaca =
     </div>
   </div>
 
-  <div class="relative mx-auto max-w-shell px-4 sm:px-7">
+  <div class="relative mx-auto max-w-shell px-4 sm:px-6 lg:px-10 xl:px-14">
     {/* El padding derecho de sm para arriba le deja lugar al botón flotante del
         carrito (56px + 24 de margen): sin eso, al llegar al final del scroll el
         botón queda justo encima de la firma del estudio. */}

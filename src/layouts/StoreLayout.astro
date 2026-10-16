@@ -71,7 +71,12 @@ const pageTitle = title ? `${title} | ${SITE.nombre}` : `${SITE.nombre} — ${SI
               observador.unobserve(entrada.target);
             }
           },
-          { threshold: 0.15 },
+          // Umbral 0 + un margen negativo abajo: se revela cuando el bloque entra
+          // 120px en pantalla. Con `threshold: 0.15` la grilla del catálogo no se
+          // revelaba NUNCA en celular -- en una columna mide ~6800px, y 15% de eso
+          // (1020px) no entra en una pantalla de 844: el ratio máximo posible era
+          // 0.124. El catálogo entero quedaba en opacity 0.
+          { threshold: 0, rootMargin: '0px 0px -120px 0px' },
         );
         bloques.forEach((b) => observador.observe(b));
       }

@@ -10,6 +10,10 @@ export const CAMPO =
 /**
  * Botón principal: pastilla negra con texto amarillo. Cada uso le suma su medida y
  * su disposición (ancho, alto, flex).
+ *
+ * El relleno amarillo que entra al pasar el mouse vive en `.btn-relleno`
+ * (styles/global.css), pintado como fondo del propio botón. El botón
+ * deshabilitado (sin stock) no se rellena.
  */
 export const BTN_NEGRO =
-  'rounded-full bg-carbon text-xs sm:text-[13px] font-extrabold uppercase tracking-wider text-amarillo hover:bg-tintaFuerte active:bg-tintaFuerte disabled:cursor-not-allowed disabled:bg-plomo disabled:text-white';
+  'btn-relleno rounded-full bg-carbon text-xs sm:text-[13px] font-extrabold uppercase tracking-wider text-amarillo disabled:cursor-not-allowed disabled:bg-plomo disabled:text-white';

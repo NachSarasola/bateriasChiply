@@ -37,8 +37,7 @@ Para entrar al panel en local hace falta un `.dev.vars` (copiar de `.dev.vars.ex
 
 `src/pages/index.astro` es todo el sitio público: hace **una** consulta a D1
 (`getAllBaterias`) y de ahí salen el hero, la franja de beneficios, el catálogo entero,
-los pasos y el mapa. Las secciones son anclas (`#catalogo`, `#como-comprar`, `#donde`),
-no rutas.
+el catálogo y el mapa. Las secciones son anclas (`#catalogo`, `#donde`), no rutas.
 
 Consecuencia importante: **el filtrado es del lado del cliente**. Cada tarjeta lleva un
 `data-buscar` precalculado en el servidor (`textoBuscable()` en `src/lib/catalog.ts`) y
@@ -97,6 +96,15 @@ sitio tomaba `supermaxx.com.ar` como referencia (fondo casi negro, acento rojo);
 quedó completamente reemplazado. `rojo`/`rojoOscuro` siguen en `tailwind.config.mjs`
 solo porque el panel `/admin` (fuera de este reskin) todavía los usa.
 
+- **El ancho de página no sale del mockup.** El mockup era un diseño fijo a 1920 y
+  no contesta qué pasa en cada pantalla. `shell` es **86rem** (1376px) con el root
+  en **16px**; estuvo en 72rem con el root en 15px, o sea 1080px reales, y a 1920
+  dejaba 420px de gris muerto por lado — el 44% de la pantalla vacía. El padding
+  lateral escala (`px-4 sm:px-6 lg:px-10 xl:px-14`) en vez de quedarse en 16px a
+  cualquier ancho. La grilla va de 1 a 2 (`sm`), 3 (`lg`) y **4 columnas (`2xl`)**.
+- **El root es 16px y manda sobre toda la escala.** Cada rem de Tailwind —
+  tipografía, spacing, anchos — se mide contra él: con 15px el sistema entero
+  entraba un 6,7% encogido y `text-base` renderizaba 15px donde el token dice 16.
 - **Fondo de página `#BCBCBC`** (gris, no oscuro) — header y footer son las únicas
   bandas negras (`#030303`, no `#000` puro), con un brillo diagonal superpuesto
   (`linear-gradient`), y **flotan** sobre el gris en vez de ir a ancho completo: el
@@ -105,8 +113,9 @@ solo porque el panel `/admin` (fuera de este reskin) todavía los usa.
 - Tarjetas **blancas** con radio 10px, foto inset con su propio margen (no a sangre).
 - Specs en **itálica**, con las 5 filas y las etiquetas exactas del mockup ("Capacidad
   C20 (Ah)", "Choque de arranque CCA-18° (A)"...) — texto `#000` puro. La fila
-  resaltada usa **el mismo gris que el fondo de página** (`#BCBCBC`), no un gris propio
-  de la tarjeta. Debajo, una fila aparte de 3 columnas para Largo/Ancho/Alto.
+  resaltada usa **el mismo gris que el fondo de página** (`bg-pagina`, `#BCBCBC`), no
+  un gris propio de la tarjeta: con un 4% de negro la cebra no llegaba a dibujar la
+  tabla. Debajo, una fila aparte de 3 columnas para Largo/Ancho/Alto.
 - Badge de garantía: círculo `#444444` (no negro puro) con el número en amarillo.
 - Botón "Agregar al carrito": ancho completo, píldora (`rounded-full`), negro con
   texto amarillo — **sin precio en la ficha**, el mockup no lo muestra nunca. Por
@@ -129,10 +138,19 @@ solo porque el panel `/admin` (fuera de este reskin) todavía los usa.
 - Zalando Sans Expanded 700/800 en títulos de sección, Manrope en el texto. Se sirven
   desde `public/fuentes/` (96 KB, solo latin y latin-ext) — sin CDN de Google en la
   ruta crítica.
+- **Las flechas del carrusel solo aparecen con el mouse encima** (`group-hover/foto`)
+  y nunca en táctil, donde la foto se pasa con el dedo y están los puntos: fijas eran
+  dos círculos blancos sobre cada una de las 41 fotos, el ruido más fuerte de la grilla.
+- **Un solo lenguaje de píldora en todo el sitio**, catálogo y sucursales: siempre
+  rellenas, la activa amarilla con texto oscuro y las inactivas negras con texto
+  amarillo. Las de `Donde.astro` eran outline blancas.
+- **Los tiles del mapa van en grayscale** (`.leaflet-tile-pane` en `global.css`).
+  OpenStreetMap a todo color terminaba siendo lo más colorido de la página y le
+  competía a los pines, que son lo único que hay que mirar ahí.
 - **Sin Hero.** La página no tiene una sección de bienvenida con foto grande: arranca
   en header → beneficios → catálogo, igual que el mockup (que es solo la vista de
-  catálogo). `ComoComprar.astro` y `Donde.astro` sí se mantienen — son contenido real
-  que el mockup no cubre, restyleados para el mismo sistema de colores.
+  catálogo). `Donde.astro` sí se mantiene — es contenido real que el mockup no
+  cubre, restyleado para el mismo sistema de colores.
 
 Ojo con los nombres de token: en Tailwind `text-*` sirve para color **y** para tamaño,
 así que ningún `fontSize` puede repetir un nombre de la paleta (por eso `text-ficha` y

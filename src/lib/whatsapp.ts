@@ -22,6 +22,12 @@ export function whatsappLink(mensaje: string, numero: string): string {
   return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
 }
 
+/** "5493755631664" -> "3755 631664", solo para que se lea como telefono. */
+export function formatearWhatsapp(numero: string): string {
+  const sinPrefijo = numero.replace(/^549/, '');
+  return sinPrefijo.length > 4 ? `${sinPrefijo.slice(0, 4)} ${sinPrefijo.slice(4)}` : sinPrefijo;
+}
+
 function lineaDe(item: CartItem): string {
   const borne = item.borne ? ` (borne ${item.borne})` : '';
   const precioStr = item.precio > 0 ? formatPrice(item.precio * item.qty) : '(A consultar precio)';

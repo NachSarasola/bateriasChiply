@@ -89,10 +89,17 @@ export default {
         boton: '1.6px',
       },
       maxWidth: {
-        shell: '72rem',
+        // 86rem = 1376px con el root en 16px. Antes era 72rem con el root en 15px:
+        // 1080px reales, que a 1920 dejaban 420px de gris muerto por lado -- el 44%
+        // de la pantalla vacia. El mockup era un diseno fijo a 1920 y por eso no
+        // contestaba esta pregunta; la contesta el sitio.
+        shell: '86rem',
       },
       gridTemplateColumns: {
-        // La grilla del catalogo del mockup: 3 columnas fijas, incluso a 1920px.
+        // La grilla del catalogo del mockup: 3 columnas desde lg. A partir de 2xl
+        // (1536px) pasan a 4 -- ver `2xl:grid-cols-4` en Catalogo.astro: con el
+        // shell ancho, 3 columnas a 1920 dejaban tarjetas de 460px y el catalogo
+        // entraba de a 3 productos por fila en una pantalla que admite 4.
         catalogo: 'repeat(3, minmax(0, 1fr))',
       },
     },

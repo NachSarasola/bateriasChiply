@@ -1,8 +1,17 @@
 ---
 /**
- * Cinta de beneficios debajo del header: los argumentos de venta del mostrador,
- * escritos como los diría el vendedor, pasando en una línea. El CSS de la cinta
- * (`.cinta*`) vive en styles/global.css.
+ * Franja de beneficios debajo del header: los argumentos de venta del mostrador,
+ * escritos como los diría el vendedor.
+ *
+ * Fue una cinta que pasaba sola y dejó de serlo. El contenido no daba para ese
+ * formato: una vuelta entera eran 5700px, o sea dos minutos de espera para leer
+ * cinco frases que son justamente las que cierran la venta. Encima el movimiento
+ * era permanente y estaba arriba de lo único que hay que mirar, que es el
+ * catálogo. Ahora están los cinco a la vez y no se mueve nada.
+ *
+ * Va sobre el mismo negro del header y sin borde: header y beneficios se leen
+ * como un solo bloque con jerarquía adentro, en vez de dos bandas oscuras de
+ * negros distintos apiladas.
  *
  * Los íconos son trazos simples y todos del mismo peso: un set de pictogramas de
  * stock, cada uno con su estilo, es de lo que más delata una plantilla.
@@ -22,42 +31,52 @@ const ICONOS: string[] = [
   'M20 12a8 8 0 11-2.3-5.7M20 4v4h-4',
 ];
 
-// Cada grupo repite la lista para que, solo, ya sea más ancho que una pantalla
-// grande; la pista duplica el grupo y por eso la cinta cierra el ciclo sin salto.
-const items = [...BENEFICIOS, ...BENEFICIOS].map((b, k) => ({
-  ...b,
-  icono: ICONOS[(k % BENEFICIOS.length) % ICONOS.length],
-}));
-const grupos = [false, true];
+const items = BENEFICIOS.map((b, k) => ({ ...b, icono: ICONOS[k % ICONOS.length] }));
 ---
 
-<section aria-label="Beneficios" class="cinta border-y border-white/10 bg-pizarra">
-  <div class="cinta-pista">
+<section aria-label="Beneficios" class="bg-carbon">
+  {/* En celular la franja se pasa con el dedo y cada ítem engancha donde
+      corresponde. El ancho de 72% deja medio ítem asomando a la derecha: sin eso
+      nadie se entera de que hay cuatro beneficios más. El fundido del borde lo
+      maneja el script del layout, que lo apaga cuando ya no queda nada atrás. */}
+  <ul
+    class="no-scrollbar mx-auto flex max-w-shell snap-x snap-mandatory scroll-px-4 overflow-x-auto px-4 sm:scroll-px-6 sm:px-6 lg:snap-none lg:scroll-px-10 lg:overflow-visible lg:px-10 xl:scroll-px-14 xl:px-14"
+    data-scroll-fundido="horizontal"
+  >
     {
-      grupos.map((duplicado) => (
-        <ul class="cinta-grupo" aria-hidden={duplicado ? 'true' : undefined}>
-          {items.map((b) => (
-            <li class="flex shrink-0 items-center gap-3 border-r border-white/10 px-8 py-4">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="h-5 w-5 shrink-0 text-amarillo"
-                aria-hidden="true"
-              >
-                <path d={b.icono} />
-              </svg>
-              <p class="whitespace-nowrap text-sm">
-                <strong class="font-bold text-white">{b.titulo}</strong>
-                {b.bajada && <span class="ml-2 text-plomo">{b.bajada}</span>}
-              </p>
-            </li>
-          ))}
-        </ul>
+      items.map((b, i) => (
+        <li
+          class:list={[
+            // Cuantos entran a la vez depende del ancho: uno y medio en celular,
+            // dos y medio en una tablet chica, tres y medio en una grande. La
+            // fracción que asoma es lo que avisa que hay más.
+            'w-[72%] shrink-0 snap-start py-5 pr-5 sm:w-[42%] md:w-[31%] lg:w-auto lg:flex-1 lg:basis-0 lg:shrink lg:px-5',
+            // La línea divisoria recién cuando están los cinco en fila: con los
+            // ítems enganchando de a uno, cae en cualquier lado.
+            i > 0 && 'lg:border-l lg:border-white/10',
+            i === 0 && 'lg:pl-0',
+          ]}
+        >
+          <p class="flex items-center gap-2">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="h-5 w-5 shrink-0 text-amarillo"
+              aria-hidden="true"
+            >
+              <path d={b.icono} />
+            </svg>
+            <strong class="text-sm font-bold leading-tight text-white">{b.titulo}</strong>
+          </p>
+          {b.bajada && (
+            <span class="mt-1.5 block text-xs leading-snug text-plata/70">{b.bajada}</span>
+          )}
+        </li>
       ))
     }
-  </div>
+  </ul>
 </section>

@@ -37,12 +37,108 @@ const ICONOS_TIPO: Record<string, string> = {
 };
 ---
 
-{/* Poco padding arriba a propósito: en el mockup las píldoras van pegadas al
-    header, sin una franja de aire de "sección" en el medio. */}
-<section id="catalogo" class="pb-14 pt-2 md:pb-20 md:pt-3">
-  <div class="mx-auto max-w-shell px-4">
-    <h2 class="text-3xl font-bold text-tintaFuerte sm:text-seccion">{CATALOGO.titulo}</h2>
-    {CATALOGO.bajada && <p class="mt-2 max-w-xl text-tinta/70">{CATALOGO.bajada}</p>}
+{/* Aire entre el bloque negro de arriba (header + beneficios) y el titulo: sin
+    esa franja de gris, el titulo se lee pegado a la banda. */}
+<section id="catalogo" class="pb-14 pt-8 md:pb-20 md:pt-10">
+  <div class="mx-auto max-w-shell px-4 sm:px-6 lg:px-10 xl:px-14" data-catalogo data-visibles={VISIBLES}>
+    <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div class="shrink-0">
+        <h2 class="text-3xl font-bold text-tintaFuerte sm:text-seccion">{CATALOGO.titulo}</h2>
+        {CATALOGO.bajada && <p class="mt-2 max-w-xl text-tinta/85">{CATALOGO.bajada}</p>}
+        {baterias.length > 0 && (
+          <p data-contador class="mt-1 text-sm text-tinta/85" aria-live="polite">
+            {baterias.length} {baterias.length === 1 ? 'batería' : 'baterías'}
+          </p>
+        )}
+      </div>
+
+      {/* Tira de filtros y buscador alineados a la derecha */}
+      {baterias.length > 0 && (
+        <div
+          class="no-scrollbar -mx-4 flex items-center justify-start overflow-x-auto px-4 py-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0"
+          data-scroll-fundido="horizontal"
+          data-fila-filtros
+        >
+          <div class="flex shrink-0 items-center gap-2 sm:ml-auto">
+            {/* Píldoras sólidas, como en el mockup de Chiply: nunca outline. La
+                activa se lee clara (amarillo + texto oscuro) y las inactivas quedan
+                oscuras (negro + texto amarillo). */}
+            <button
+              type="button"
+              data-filtro="todos"
+              aria-pressed="true"
+              class="h-10 shrink-0 rounded-full bg-amarillo px-4 text-sm font-bold text-tintaFuerte transition-opacity hover:opacity-90 active:opacity-75"
+            >
+              Todas
+            </button>
+            {tipos.map((t) => (
+              <button
+                type="button"
+                data-filtro={t.slug}
+                aria-pressed="false"
+                class="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-carbon px-4 text-sm font-bold text-amarillo transition-opacity hover:opacity-90 active:opacity-75"
+              >
+                {t.nombre}
+                {ICONOS_TIPO[t.slug] && (
+                  <svg
+                    data-filtro-icono
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="hidden h-4 w-4 shrink-0"
+                    aria-hidden="true"
+                  >
+                    <path d={ICONOS_TIPO[t.slug]} />
+                  </svg>
+                )}
+              </button>
+            ))}
+
+            {/* La lupa alineada al final: al hacer clic se ensancha fluidamente hacia
+                la izquierda empujando los filtros con animación. */}
+            {/* El anillo de foco va en el contenedor y no en el input: el input
+                es un rectangulo adentro de una capsula recortada, asi que su
+                anillo aparecia cortado en las cuatro esquinas. Aca sigue la
+                forma de la pildora. */}
+            <div
+              data-buscador-wrap
+              class="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-carbon transition-[width] duration-300 ease-out focus-within:ring-2 focus-within:ring-inset focus-within:ring-amarillo"
+            >
+              <input
+                type="search"
+                data-buscador
+                placeholder="Código o medida..."
+                aria-label="Buscar batería por código o medida"
+                class="h-10 w-full bg-transparent pl-4 pr-11 text-base text-amarillo outline-none placeholder:text-amarillo/60 sm:text-sm"
+              />
+              <button
+                type="button"
+                data-buscador-toggle
+                aria-label="Buscar por código o medida"
+                aria-expanded="false"
+                class="absolute right-0 top-0 flex h-10 w-10 shrink-0 items-center justify-center text-amarillo hover:text-white transition-colors"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  class="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M20 20l-3.5-3.5" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
 
     {
       baterias.length === 0 ? (
@@ -51,98 +147,16 @@ const ICONOS_TIPO: Record<string, string> = {
           decimos qué batería lleva tu vehículo.
         </p>
       ) : (
-        <div data-catalogo data-visibles={VISIBLES}>
-          {/* Tira de filtros y buscador alineados a la derecha */}
-          <div
-            class="no-scrollbar -mx-4 flex items-center justify-start md:justify-end overflow-x-auto px-4 lg:mx-0 lg:px-0 py-1"
-            data-scroll-fundido="horizontal"
-            data-fila-filtros
-          >
-            <div class="flex items-center gap-2 md:ml-auto shrink-0">
-              {/* Píldoras sólidas, como en el mockup de Chiply: nunca outline. La
-                  activa se lee clara (amarillo + texto oscuro) y las inactivas quedan
-                  oscuras (negro + texto amarillo). */}
-              <button
-                type="button"
-                data-filtro="todos"
-                aria-pressed="true"
-                class="h-10 shrink-0 rounded-full bg-amarillo px-4 text-sm font-bold text-tintaFuerte transition-opacity hover:opacity-90 active:opacity-75"
-              >
-                Todas
-              </button>
-              {tipos.map((t) => (
-                <button
-                  type="button"
-                  data-filtro={t.slug}
-                  aria-pressed="false"
-                  class="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-carbon px-4 text-sm font-bold text-amarillo transition-opacity hover:opacity-90 active:opacity-75"
-                >
-                  {t.nombre}
-                  {ICONOS_TIPO[t.slug] && (
-                    <svg
-                      data-filtro-icono
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.6"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      class="hidden h-4 w-4 shrink-0"
-                      aria-hidden="true"
-                    >
-                      <path d={ICONOS_TIPO[t.slug]} />
-                    </svg>
-                  )}
-                </button>
-              ))}
-
-              {/* La lupa alineada al final: al hacer clic se ensancha fluidamente hacia
-                  la izquierda empujando los filtros con animación. */}
-              <div
-                data-buscador-wrap
-                class="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-carbon transition-[width] duration-300 ease-out"
-              >
-                <input
-                  type="search"
-                  data-buscador
-                  placeholder="Código o medida..."
-                  aria-label="Buscar batería por código o medida"
-                  class="h-10 w-full bg-transparent pl-4 pr-11 text-base sm:text-sm text-amarillo placeholder:text-amarillo/60 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  data-buscador-toggle
-                  aria-label="Buscar por código o medida"
-                  aria-expanded="false"
-                  class="absolute right-0 top-0 flex h-10 w-10 shrink-0 items-center justify-center text-amarillo hover:text-white transition-colors"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    class="h-5 w-5"
-                    aria-hidden="true"
-                  >
-                    <circle cx="11" cy="11" r="7" />
-                    <path d="M20 20l-3.5-3.5" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <p data-contador class="mt-4 text-sm text-tinta/70" aria-live="polite">
-            {baterias.length} {baterias.length === 1 ? 'batería' : 'baterías'}
-          </p>
-
+        <div>
           {/* El mockup es un diseño fijo a 1920px con 3 columnas siempre; acá se
               respeta esa grilla desde `lg` (donde ya entran cómodas) y se cae a 2 y
               a 1 en pantallas más chicas, que es lo único que el mockup no define. */}
-          <div class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-catalogo" data-reveal>
+          <div
+            class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-catalogo 2xl:grid-cols-4"
+            data-reveal="escalonado"
+          >
             {baterias.map((b, i) => (
-              <BateriaCard bateria={b} prioridad={i < 4} />
+              <BateriaCard bateria={b} prioridad={i < 4} indice={i} />
             ))}
           </div>
 
@@ -150,7 +164,7 @@ const ICONOS_TIPO: Record<string, string> = {
               medida que no está es justamente el que hay que mandar a WhatsApp. */}
           <div data-sin-resultados class="hidden py-14 text-center">
             <p class="text-lg font-bold text-tintaFuerte">No encontramos esa medida.</p>
-            <p class="mx-auto mt-2 max-w-md text-tinta/70">
+            <p class="mx-auto mt-2 max-w-md text-tinta/85">
               Puede que la tengamos sin publicar o que entre otra equivalente.
               Pasanos el vehículo y te confirmamos en el momento.
             </p>
