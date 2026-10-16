@@ -1,0 +1,63 @@
+---
+/**
+ * Cinta de beneficios debajo del header: los argumentos de venta del mostrador,
+ * escritos como los diría el vendedor, pasando en una línea. El CSS de la cinta
+ * (`.cinta*`) vive en styles/global.css.
+ *
+ * Los íconos son trazos simples y todos del mismo peso: un set de pictogramas de
+ * stock, cada uno con su estilo, es de lo que más delata una plantilla.
+ */
+const { BENEFICIOS } = Astro.locals.config;
+
+const ICONOS: string[] = [
+  // Escudo (garantía)
+  'M12 3l7 3v5c0 4.2-2.9 7.8-7 9-4.1-1.2-7-4.8-7-9V6l7-3z',
+  // Llave (instalación)
+  'M14.7 6.3a4 4 0 105.1 5.1L21 10.6 13.4 3 12 4.4l2.7 1.9zM3 21l7.5-7.5',
+  // Camioneta (envío)
+  'M3 16V7h11v9M14 10h4l3 3v3h-7M7 19a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4z',
+  // Gota tachada (libre de mantenimiento)
+  'M12 3s5 5.6 5 9a5 5 0 01-10 0c0-3.4 5-9 5-9zM4 4l16 16',
+  // Flecha circular (recibimos la vieja)
+  'M20 12a8 8 0 11-2.3-5.7M20 4v4h-4',
+];
+
+// Cada grupo repite la lista para que, solo, ya sea más ancho que una pantalla
+// grande; la pista duplica el grupo y por eso la cinta cierra el ciclo sin salto.
+const items = [...BENEFICIOS, ...BENEFICIOS].map((b, k) => ({
+  ...b,
+  icono: ICONOS[(k % BENEFICIOS.length) % ICONOS.length],
+}));
+const grupos = [false, true];
+---
+
+<section aria-label="Beneficios" class="cinta border-y border-white/10 bg-pizarra">
+  <div class="cinta-pista">
+    {
+      grupos.map((duplicado) => (
+        <ul class="cinta-grupo" aria-hidden={duplicado ? 'true' : undefined}>
+          {items.map((b) => (
+            <li class="flex shrink-0 items-center gap-3 border-r border-white/10 px-8 py-4">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="h-5 w-5 shrink-0 text-amarillo"
+                aria-hidden="true"
+              >
+                <path d={b.icono} />
+              </svg>
+              <p class="whitespace-nowrap text-sm">
+                <strong class="font-bold text-white">{b.titulo}</strong>
+                {b.bajada && <span class="ml-2 text-plomo">{b.bajada}</span>}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ))
+    }
+  </div>
+</section>

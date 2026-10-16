@@ -1,0 +1,220 @@
+# chiply-store
+
+Sitio de Baterías Chiply: una sola página pública con catálogo, buscador y carrito que
+termina en WhatsApp, más un panel privado para que el cliente cargue sus productos.
+
+Está derivado de `Clientes/Forja CHIMPA/forja-store`. Comparten la máquina (Astro SSR +
+D1 + R2, carrito en localStorage, panel con cookie firmada); cambian el modelo de datos,
+las rutas públicas y todo el diseño.
+
+## Stack
+
+| | |
+|---|---|
+| Framework | Astro 5, `output: 'server'` |
+| Estilos | Tailwind 3, tokens en `tailwind.config.mjs` |
+| Hosting | Cloudflare Pages |
+| Base | D1 (`baterias`, `textos`) |
+| Fotos | R2, servidas por `/fotos/*` |
+| JS en el cliente | ~10 KB sin comprimir. Cero dependencias |
+
+## Comandos
+
+```bash
+npm install
+npm run db:local      # crea el schema en la D1 local (Miniflare)
+npm run catalogo:local   # carga las 41 baterías reales (catalogo.sql)
+npm run dev           # http://localhost:4321
+npm run check         # astro check (type-check de .astro y .ts)
+npm run build
+```
+
+Para entrar al panel en local hace falta un `.dev.vars` (copiar de `.dev.vars.example`).
+
+## Cómo está armado
+
+### Una sola página
+
+`src/pages/index.astro` es todo el sitio público: hace **una** consulta a D1
+(`getAllBaterias`) y de ahí salen el hero, la franja de beneficios, el catálogo entero,
+los pasos y el mapa. Las secciones son anclas (`#catalogo`, `#como-comprar`, `#donde`),
+no rutas.
+
+Consecuencia importante: **el filtrado es del lado del cliente**. Cada tarjeta lleva un
+`data-buscar` precalculado en el servidor (`textoBuscable()` en `src/lib/catalog.ts`) y
+el script de `Catalogo.astro` esconde y muestra tarjetas. No hay fetch, no hay router.
+
+El buscador normaliza la consulta igual que el índice: saca acentos y pega
+`12 x 65` → `12x65`, porque si no cada dígito suelto matcheaba media tabla. Todas las
+palabras tienen que estar presentes (AND, no OR).
+
+Del tope de 12 tarjetas visibles: se renderizan todas igual (el filtro necesita
+encontrarlas) y las de más van con `hidden` hasta que se toca "Ver todas". Con filtro o
+búsqueda activa no hay recorte.
+
+### Datos
+
+Una tabla, `baterias`. Casi todas las specs son `NULL`-ables a propósito: no todos los
+proveedores publican CCA o reserva, y es preferible una ficha a medio llenar que no
+poder cargar el producto. `src/lib/catalog.ts` traduce entre `snake_case` de SQLite y
+`camelCase` de TypeScript.
+
+`src/lib/baterias-admin.ts` normaliza lo que manda el formulario. Sus claves son
+exactamente los nombres de columna, así que los endpoints arman el INSERT y el UPDATE
+por reflexión sobre el objeto — son 22 campos y escribirlos a mano en dos lugares era
+garantía de que algún día quedaran desalineados. Los nombres salen de nuestro código,
+nunca del request; los valores siguen yendo por `bind()`.
+
+### Carrito
+
+`src/lib/cart.ts` (estado en localStorage + `CustomEvent`) y `CartDrawer.astro` (UI de
+dos pasos). El alta al carrito la maneja **solo** el listener de `CartDrawer` sobre
+`document`: si `Catalogo.astro` también escuchara, cada clic sumaría dos unidades.
+
+El mensaje de WhatsApp lo arma `buildOrderMessage()` y se corta a 1800 caracteres —
+arriba de eso el link `wa.me` no abre la app en iOS.
+
+El formulario pide **vehículo**, no localidad. En baterías es el dato que permite
+confirmar que la medida elegida es la correcta antes de facturar; equivocarse de borne
+o de altura de caja es la devolución más común del rubro.
+
+### Config
+
+Los textos viven en la tabla `textos` (clave/valor) y `src/data/config.ts` les pone
+valores de fábrica. El middleware los resuelve una vez por request y los deja en
+`Astro.locals.config`.
+
+**Patrón a respetar:** los `<script>` de Astro corren en el navegador y no pueden
+importar `data/config` (depende de D1). El número de WhatsApp y cualquier otro valor de
+config viajan por `data-*` — ver `CartDrawer.astro`.
+
+### Diseño
+
+Réplica exacta del mockup real de Chiply (Adobe XD, compartido por el cliente) — no
+una inspiración. Los valores salen de capturar el prototipo con Chrome headless a
+resolución nativa 2-3x y leer los píxeles con Python/PIL, no a ojo. Antes de esto el
+sitio tomaba `supermaxx.com.ar` como referencia (fondo casi negro, acento rojo); eso
+quedó completamente reemplazado. `rojo`/`rojoOscuro` siguen en `tailwind.config.mjs`
+solo porque el panel `/admin` (fuera de este reskin) todavía los usa.
+
+- **Fondo de página `#BCBCBC`** (gris, no oscuro) — header y footer son las únicas
+  bandas negras (`#030303`, no `#000` puro), con un brillo diagonal superpuesto
+  (`linear-gradient`), y **flotan** sobre el gris en vez de ir a ancho completo: el
+  header tiene esquinas muy redondeadas (`rounded-banda`, 28px) y margen gris visible
+  alrededor; el footer va a ancho completo, sin ese redondeo.
+- Tarjetas **blancas** con radio 10px, foto inset con su propio margen (no a sangre).
+- Specs en **itálica**, con las 5 filas y las etiquetas exactas del mockup ("Capacidad
+  C20 (Ah)", "Choque de arranque CCA-18° (A)"...) — texto `#000` puro. La fila
+  resaltada usa **el mismo gris que el fondo de página** (`#BCBCBC`), no un gris propio
+  de la tarjeta. Debajo, una fila aparte de 3 columnas para Largo/Ancho/Alto.
+- Badge de garantía: círculo `#444444` (no negro puro) con el número en amarillo.
+- Botón "Agregar al carrito": ancho completo, píldora (`rounded-full`), negro con
+  texto amarillo — **sin precio en la ficha**, el mockup no lo muestra nunca. Por
+  dentro se mantiene la rama entre baterías con precio cargado (agrega de verdad al
+  carrito) y sin precio (abre WhatsApp) — dos elementos (`<button>`/`<a>`) con las
+  mismas clases, visualmente indistinguibles.
+- Acento `#FFF112` (amarillo Chiply — más "limón" que un amarillo estándar).
+  **Regla de contraste, no negociable:** el amarillo nunca es texto directo sobre
+  blanco/gris claro. Sobre fondo oscuro (header, footer, badges, botones negros) va
+  amarillo de texto o ícono; sobre superficie clara el acento se resuelve con un
+  elemento **sólido negro**, nunca con amarillo suelto. Las píldoras de filtro son la
+  excepción del mockup: siempre rellenas, nunca outline — inactivas en negro con
+  texto amarillo, la activa invertida (amarillo con texto oscuro).
+- **El logo es una imagen real** (`public/logo-chiply.png`), no texto con itálica
+  sintética: el logotipo de Chiply tiene letras modificadas a mano (la H con la barra
+  en diagonal, el punto de la i como rombo) — no es ninguna fuente de Google Fonts.
+  El PNG salió de recortar el mockup a resolución nativa 3x y separar el fondo negro
+  del logotipo (amarillo/blanco) por color. `LogoChiply.astro` queda como el único
+  lugar a tocar si algún día llega un archivo de marca definitivo.
+- Zalando Sans Expanded 700/800 en títulos de sección, Manrope en el texto. Se sirven
+  desde `public/fuentes/` (96 KB, solo latin y latin-ext) — sin CDN de Google en la
+  ruta crítica.
+- **Sin Hero.** La página no tiene una sección de bienvenida con foto grande: arranca
+  en header → beneficios → catálogo, igual que el mockup (que es solo la vista de
+  catálogo). `ComoComprar.astro` y `Donde.astro` sí se mantienen — son contenido real
+  que el mockup no cubre, restyleados para el mismo sistema de colores.
+
+Ojo con los nombres de token: en Tailwind `text-*` sirve para color **y** para tamaño,
+así que ningún `fontSize` puede repetir un nombre de la paleta (por eso `text-ficha` y
+no `text-tarjeta`).
+
+### Catálogo real
+
+`catalogo.sql` y `public/catalogo/` salen de `scripts/importar-catalogo.py`, que lee
+`../Galeria de baterias/Catalogo-Baterias-Chiply - Baterias.csv` y las 82 fotos
+originales (JPG de 14 MB, verticales, sobre telgopor). El script:
+
+- normaliza el CSV: `25°C:50AH` → 50, `2 AÑOS` → 24 meses, medidas de cm con coma a mm;
+- recorta cada foto alrededor de la batería y la lleva a 5:4, que es el aspect de la
+  tarjeta; guarda `<slug>-N.webp` (1000px) y `-sm.webp` (500px), la misma convención
+  que usa el uploader del panel. 1,2 GB quedan en 8 MB;
+- genera `INSERT OR IGNORE`: correrlo dos veces no pisa lo que Chiply haya editado.
+
+El recorte no es un bbox ingenuo de píxeles oscuros: eso cortaba la batería en más de
+la mitad de las fotos (una sombra sobre el telgopor se pegaba al cuerpo oscuro y corría
+el centro del recorte, o una etiqueta clara partía la batería en dos componentes y el
+de peor puntaje —a veces la base— quedaba afuera). El detector cierra esos huecos
+internos (`binary_closing`), separa objeto de sombra por erosión + componentes conexos,
+y desempata por cercanía al centro de la foto, no solo por tamaño. Necesita
+`numpy`/`scipy` además de Pillow — ver `scripts/requirements.txt`
+(`pip install -r scripts/requirements.txt`).
+
+Las fotos van estáticas en `public/catalogo/` y no en R2 porque todavía no existe el
+bucket en la cuenta de Chiply, y porque servidas desde el edge de Pages son más
+rápidas que pasando por el proxy `/fotos/*`. Las que suban después desde el panel sí
+van a R2; conviven sin problema porque la ficha guarda URLs.
+
+**El CSV no trae precios.** Todas entran con `precio = 0`, que el sitio muestra como
+"Consultar precio" con el botón mandando a WhatsApp en vez de al carrito. Apenas
+Chiply cargue un precio desde el panel, esa batería pasa a tener botón "Agregar".
+Tampoco trae aplicación (qué vehículos la llevan), borne ni descripción: el buscador
+por modelo de auto no encuentra nada hasta que las completen.
+
+## Pendientes antes de publicar
+
+1. **Precios y aplicaciones.** Ver arriba: sin precio el carrito no aplica; sin
+   aplicación el buscador por vehículo no sirve.
+2. **WhatsApp.** `src/data/config.ts` tiene `5490000000000` de placeholder. Sin el
+   número real, los pedidos no llegan a ningún lado.
+3. **Dirección y horarios.** Ídem, están como PLACEHOLDER y alimentan el mapa.
+4. **Logo.** `LogoChiply.astro` sigue siendo tipográfico (sin archivo de imagen), pero
+   ya calca la identidad real del mockup del cliente — no es un placeholder genérico.
+   Si llega un archivo de marca definitivo (vector o alta resolución), se reemplaza el
+   contenido de ese componente y no hay que tocar nav, footer ni panel.
+5. **Cloudflare.** La cuenta y el dominio van a nombre de Chiply (la Opción A del
+   presupuesto no incluye hosting). Falta crear D1 y R2 ahí y completar el
+   `database_id` de `wrangler.toml`.
+
+## Deploy
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name=baterias-chiply
+```
+
+Los dos secretos van por dashboard o CLI, nunca al repo:
+
+```bash
+npx wrangler pages secret put ADMIN_PASSWORD --project-name=baterias-chiply
+npx wrangler pages secret put ADMIN_SECRET --project-name=baterias-chiply
+```
+
+Y el schema contra la base remota, una sola vez:
+
+```bash
+npx wrangler d1 execute baterias-chiply --remote --file=./seed.sql
+```
+
+Y el catálogo, también una sola vez: `npm run catalogo:remote`.
+
+## Deuda conocida
+
+- **SEO.** Sin una URL por producto se pierde la búsqueda long-tail ("batería 12x65
+  Ushuaia"). El JSON-LD de `index.astro` habilita el rich result del listado pero no lo
+  reemplaza. Si les importa, la salida es agregar `/b/[slug]`; no está en el presupuesto.
+- **Escala del catálogo.** Con más de ~80 baterías el HTML de la página empieza a pesar,
+  porque van todas en el mismo documento. Ahí hay que reabrir la decisión de "una sola
+  página".
+- El adaptador de Cloudflare avisa por un binding KV `SESSION` que no usamos (la sesión
+  del panel es una cookie firmada, no la API de sessions de Astro). Es informativo;
+  `forja-store` corre en producción con el mismo aviso.

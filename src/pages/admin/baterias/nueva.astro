@@ -1,0 +1,12 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import BateriaForm from '../../../components/admin/BateriaForm.astro';
+import { getAllBaterias, getTipos } from '../../../lib/catalog';
+
+const db = Astro.locals.runtime.env.DB;
+const tipos = getTipos(await getAllBaterias(db)).map((t) => t.nombre);
+---
+
+<AdminLayout title="Nueva batería">
+  <BateriaForm tipos={tipos} />
+</AdminLayout>

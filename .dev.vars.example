@@ -1,0 +1,10 @@
+# Copiar a .dev.vars y completar para desarrollo local.
+# En produccion estos dos van como Secret en Cloudflare Pages > Settings >
+# Environment variables (no en wrangler.toml, no en el repo).
+
+# La contrasena con la que Chiply entra a /admin.
+ADMIN_PASSWORD=
+
+# Clave para firmar la cookie de sesion. Cualquier string largo al azar sirve;
+# generar uno nuevo con: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+ADMIN_SECRET=

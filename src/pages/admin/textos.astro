@@ -1,0 +1,170 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { cargarTextos } from '../../lib/textos';
+
+const db = Astro.locals.runtime.env.DB;
+const T = await cargarTextos(db);
+
+type Tipo = 'texto' | 'numero' | 'parrafo' | 'lista';
+
+interface Campo {
+  clave: string;
+  etiqueta: string;
+  tipo: Tipo;
+  dondeSeVe: string;
+  ejemplo: string;
+}
+
+interface Grupo {
+  titulo: string;
+  campos: Campo[];
+}
+
+// "lista" = un item por renglón en el textarea; se junta con | recién al guardar
+// (así nadie tiene que escribir el carácter | a mano).
+const grupos: Grupo[] = [
+  {
+    titulo: 'Contacto y local',
+    campos: [
+      { clave: 'whatsapp', etiqueta: 'WhatsApp', tipo: 'texto', dondeSeVe: 'Donde llegan los pedidos. Sin +, sin espacios y sin el 15', ejemplo: '5493755631664' },
+      { clave: 'telefono', etiqueta: 'Teléfono fijo', tipo: 'texto', dondeSeVe: 'En el pie y en "Dónde estamos"', ejemplo: '3755-631664' },
+      { clave: 'instagram', etiqueta: 'Instagram', tipo: 'texto', dondeSeVe: 'Con el @', ejemplo: '@bateriaschiply' },
+      { clave: 'email', etiqueta: 'Email', tipo: 'texto', dondeSeVe: 'En el pie', ejemplo: '' },
+      { clave: 'direccion', etiqueta: 'Dirección', tipo: 'texto', dondeSeVe: 'También arma el mapa', ejemplo: 'Apóstoles Sur 712' },
+      { clave: 'ciudad', etiqueta: 'Ciudad', tipo: 'texto', dondeSeVe: '', ejemplo: 'Oberá, Misiones' },
+      { clave: 'horarios', etiqueta: 'Horarios', tipo: 'lista', dondeSeVe: 'Uno por renglón', ejemplo: 'Lunes a viernes de 8:00 a 12:30 y de 15:30 a 19:30 hs' },
+      { clave: 'mapa', etiqueta: 'Búsqueda del mapa', tipo: 'texto', dondeSeVe: 'Solo si el mapa cae en otro lado: poné acá lo que funcione en Google Maps', ejemplo: '' },
+    ],
+  },
+  {
+    titulo: 'Textos generales',
+    campos: [
+      { clave: 'nombre', etiqueta: 'Nombre del negocio', tipo: 'texto', dondeSeVe: 'Título de la pestaña y buscadores', ejemplo: 'Baterías Chiply' },
+      { clave: 'tagline', etiqueta: 'Bajada', tipo: 'texto', dondeSeVe: 'Al lado del nombre en buscadores', ejemplo: 'Baterías para auto, camioneta, moto y camión' },
+      { clave: 'descripcion', etiqueta: 'Descripción', tipo: 'parrafo', dondeSeVe: 'Buscadores, WhatsApp al compartir el link y el pie', ejemplo: '' },
+      { clave: 'beneficios', etiqueta: 'Beneficios', tipo: 'lista', dondeSeVe: 'La cinta que pasa debajo del header. Uno por renglón, con el formato Título :: explicación', ejemplo: 'Garantía escrita :: Todas salen con comprobante.' },
+    ],
+  },
+  {
+    titulo: 'Catálogo y compra',
+    campos: [
+      { clave: 'titulo_catalogo', etiqueta: 'Título del catálogo', tipo: 'texto', dondeSeVe: '', ejemplo: 'Catálogo' },
+      { clave: 'bajada_catalogo', etiqueta: 'Bajada del catálogo', tipo: 'parrafo', dondeSeVe: 'Arriba del buscador', ejemplo: 'Buscá por código o medida.' },
+      { clave: 'medios_de_pago', etiqueta: 'Medios de pago', tipo: 'lista', dondeSeVe: 'Uno por renglón', ejemplo: 'Efectivo' },
+    ],
+  },
+];
+
+const valorParaInput = (campo: Campo): string => {
+  const crudo = T[campo.clave] ?? '';
+  return campo.tipo === 'lista'
+    ? crudo.split('|').map((p) => p.trim()).filter(Boolean).join('\n')
+    : crudo;
+};
+
+const input =
+  'mt-1 w-full rounded-fila border border-white/15 bg-admin-campo px-3 py-3 text-[15px] text-white outline-none transition-colors focus:border-amarillo';
+---
+
+<AdminLayout title="Textos del sitio">
+  <p class="max-w-xl pb-6 text-sm text-plata/60">
+    Lo que dejes vacío vuelve al texto de fábrica.
+  </p>
+
+  <form data-textos-form class="max-w-2xl space-y-6">
+    <p
+      data-error
+      class="hidden rounded-fila border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-400"
+    >
+    </p>
+    <p data-ok class="hidden rounded-fila border border-emerald-500/50 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-400">Guardado.</p>
+
+    {
+      grupos.map((grupo) => (
+        <fieldset class="space-y-4 rounded-card border border-white/10 bg-admin-panel p-5">
+          <legend class="float-left w-full pb-1 text-base font-bold text-white">
+            {grupo.titulo}
+          </legend>
+          {grupo.campos.map((campo) => (
+            <label class="block">
+              <span class="text-[13px] font-bold text-white">{campo.etiqueta}</span>
+              {campo.dondeSeVe && (
+                <span class="block text-xs text-plata/60">{campo.dondeSeVe}</span>
+              )}
+              {campo.tipo === 'parrafo' || campo.tipo === 'lista' ? (
+                <textarea
+                  name={campo.clave}
+                  rows={campo.tipo === 'lista' ? 4 : 2}
+                  placeholder={campo.tipo === 'lista' ? 'Uno por renglón' : campo.ejemplo}
+                  class={input}
+                >
+                  {valorParaInput(campo)}
+                </textarea>
+              ) : (
+                <input
+                  name={campo.clave}
+                  type={campo.tipo === 'numero' ? 'number' : 'text'}
+                  value={valorParaInput(campo)}
+                  placeholder={campo.ejemplo}
+                  class={input}
+                />
+              )}
+            </label>
+          ))}
+        </fieldset>
+      ))
+    }
+
+    <button
+      type="submit"
+      class="rounded-card bg-amarillo px-6 py-3.5 text-[15px] font-bold text-carbon transition-colors hover:bg-amarilloOscuro"
+    >
+      Guardar textos
+    </button>
+  </form>
+</AdminLayout>
+
+<script>
+  // Las que en la base viajan separadas por | pero en el panel se editan de a un
+  // renglón por ítem.
+  const LISTAS = ['horarios', 'beneficios', 'medios_de_pago'];
+
+  const form = document.querySelector<HTMLFormElement>('[data-textos-form]');
+  const error = form?.querySelector<HTMLElement>('[data-error]');
+  const ok = form?.querySelector<HTMLElement>('[data-ok]');
+
+  form?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    error?.classList.add('hidden');
+    ok?.classList.add('hidden');
+
+    const data = new FormData(form);
+    const textos: Record<string, string> = {};
+    for (const [clave, valor] of data.entries()) {
+      const texto = String(valor);
+      textos[clave] = LISTAS.includes(clave)
+        ? texto
+            .split('\n')
+            .map((l) => l.trim())
+            .filter(Boolean)
+            .join('|')
+        : texto;
+    }
+
+    const res = await fetch('/api/admin/textos', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ textos }),
+    });
+
+    if (!res.ok) {
+      if (error) {
+        error.textContent = 'No se pudo guardar. Probá de nuevo.';
+        error.classList.remove('hidden');
+      }
+      return;
+    }
+    ok?.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>

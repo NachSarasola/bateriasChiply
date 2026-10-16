@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+# El panel es privado: no tiene sentido que lo indexen (además cada página ya manda
+# noindex por meta).
+Disallow: /admin
+Disallow: /api
+
+# Sin sitemap a propósito: el sitio es una sola URL.

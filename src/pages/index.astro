@@ -1,0 +1,73 @@
+---
+import StoreLayout from '../layouts/StoreLayout.astro';
+import Beneficios from '../components/Beneficios.astro';
+import Catalogo from '../components/Catalogo.astro';
+import Donde from '../components/Donde.astro';
+import { getAllBaterias, fotoPrincipal, medidas } from '../lib/catalog';
+
+const db = Astro.locals.runtime.env.DB;
+const { SITE } = Astro.locals.config;
+
+// Una sola consulta para toda la página: el catálogo entero se renderiza acá y los
+// filtros trabajan sobre el DOM, sin volver al servidor.
+const baterias = await getAllBaterias(db);
+
+/**
+ * JSON-LD por batería. Como no hay una URL por producto (el sitio es una sola
+ * página), esto es lo único que le dice a Google que cada tarjeta es un producto con
+ * precio y disponibilidad. No reemplaza a tener rutas propias, pero al menos habilita
+ * el rich result del listado.
+ */
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  itemListElement: baterias.map((b, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: {
+      '@type': 'Product',
+      name: b.nombre,
+      sku: b.codigo,
+      description: [b.aplicacion, medidas(b), b.descripcion].filter(Boolean).join('. '),
+      image: new URL(fotoPrincipal(b), Astro.site).href,
+      ...(b.marca ? { brand: { '@type': 'Brand', name: b.marca } } : {}),
+      // Sin precio cargado no se declara oferta: Google penaliza un Offer con price 0.
+      ...(b.precio > 0
+        ? {
+            offers: {
+              '@type': 'Offer',
+              price: b.precio,
+              priceCurrency: 'ARS',
+              availability: b.stock
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+              url: `${Astro.site}#catalogo`,
+            },
+          }
+        : {}),
+    },
+  })),
+};
+
+const negocioLd = {
+  '@context': 'https://schema.org',
+  '@type': 'AutoPartsStore',
+  name: SITE.nombre,
+  description: SITE.descripcion,
+  address: { '@type': 'PostalAddress', streetAddress: SITE.direccion, addressLocality: SITE.ciudad },
+  ...(SITE.telefono ? { telephone: SITE.telefono } : {}),
+};
+---
+
+<StoreLayout>
+  <Beneficios />
+  <Catalogo baterias={baterias} />
+  <Donde />
+
+  <script type="application/ld+json" set:html={JSON.stringify(negocioLd)} is:inline />
+  {
+    baterias.length > 0 && (
+      <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+    )
+  }
+</StoreLayout>

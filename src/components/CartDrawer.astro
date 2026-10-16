@@ -1,0 +1,513 @@
+---
+import { LOCALES_CHIPLY } from '../data/locales';
+import { BTN_NEGRO, CAMPO } from '../lib/ui';
+
+const { SITE, ENTREGAS } = Astro.locals.config;
+---
+
+{/* El script de abajo corre en el navegador y no puede importar data/config (depende
+    de D1, server-only). El número de WhatsApp le llega por data-* en vez de por import. */}
+<div
+  data-cart-root
+  data-whatsapp={SITE.whatsapp}
+  class="fixed inset-0 z-50 hidden"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Tu pedido"
+>
+  <div data-cart-backdrop class="absolute inset-0 bg-black/60"></div>
+
+  <aside
+    data-cart-panel
+    class="absolute inset-y-0 right-0 flex w-full max-w-[27rem] flex-col bg-tarjeta text-tinta"
+  >
+    <header class="flex items-center justify-between border-b border-black/10 px-4 py-3">
+      <h2 data-cart-titulo class="text-lg font-bold text-tintaFuerte">Tu pedido</h2>
+      <button type="button" data-cart-close class="-mr-2 h-11 px-3 text-sm font-bold text-tinta/60">
+        Cerrar
+      </button>
+    </header>
+
+    <div data-paso="items" class="flex min-h-0 flex-1 flex-col">
+      <div data-cart-items class="flex-1 overflow-y-auto px-4"></div>
+
+      <div data-cart-foot class="hidden border-t border-black/10 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+        <div class="flex items-baseline justify-between">
+          <span class="text-sm font-medium">Total</span>
+          <span data-cart-total class="precio text-2xl font-extrabold text-tintaFuerte">$0</span>
+        </div>
+        <button
+          type="button"
+          data-paso-siguiente
+          class={`${BTN_NEGRO} mt-3 w-full py-3.5`}
+        >
+          Continuar
+        </button>
+      </div>
+    </div>
+
+    <form
+      data-cart-form
+      data-paso="datos"
+      class="hidden min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto px-4 pt-4 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))]"
+      novalidate
+    >
+      <button
+        type="button"
+        data-paso-volver
+        class="flex items-center gap-1 self-start text-[13px] font-bold text-tintaFuerte hover:text-carbon"
+      >
+        <span aria-hidden="true">&larr;</span> Volver al pedido
+      </button>
+
+      <p data-cart-resumen class="precio text-xs font-bold uppercase tracking-wide text-tinta/60"></p>
+
+      <label class="block">
+        <span class="text-[13px] font-bold text-tintaFuerte">Tu nombre</span>
+        <input
+          name="nombre"
+          type="text"
+          autocomplete="name"
+          placeholder="Ej: Juan Pérez"
+          class={CAMPO}
+        />
+      </label>
+
+      {/* El vehículo no es un dato de contacto: es lo que le permite al vendedor
+          confirmar que la medida elegida es la correcta antes de facturar. Equivocarse
+          de borne o de altura de caja es la devolución más común del rubro. */}
+      <label class="block">
+        <span class="text-[13px] font-bold text-tintaFuerte">Tu vehículo</span>
+        <input
+          name="vehiculo"
+          type="text"
+          placeholder="Marca, modelo y año (ej: Toyota Hilux 2020)"
+          class={CAMPO}
+        />
+      </label>
+
+      <fieldset>
+        <legend class="text-[13px] font-bold text-tintaFuerte">Entrega</legend>
+        <div class="mt-1.5 grid gap-2">
+          {
+            ENTREGAS.map((e, i) => (
+              <label class="cursor-pointer">
+                <input
+                  type="radio"
+                  name="entrega"
+                  value={e.label}
+                  checked={i === 0}
+                  class="peer sr-only"
+                />
+                <span class="block rounded-card border border-black/15 py-2.5 text-center text-xs font-semibold text-tinta transition-colors peer-checked:border-amarilloOscuro peer-checked:bg-amarillo/10 peer-checked:font-bold peer-checked:text-black peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-amarilloOscuro">
+                  {e.label}
+                </span>
+              </label>
+            ))
+          }
+        </div>
+
+        <div class="mt-2.5" data-sucursal-field>
+          <label class="block">
+            <span class="text-[12px] font-bold text-tintaFuerte">Retirar por sucursal:</span>
+            <select
+              name="sucursal"
+              class={CAMPO}
+            >
+              {
+                LOCALES_CHIPLY.map((l) => (
+                  <option value={`${l.nombre}, ${l.direccion}`}>{l.nombre}, {l.direccion}</option>
+                ))
+              }
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <label class="block">
+        <span class="text-[13px] font-bold text-tintaFuerte">Aclaración</span>
+        <span class="text-[12px] text-tinta/60"> (opcional)</span>
+        <input
+          name="nota"
+          type="text"
+          placeholder="Ej: Tengo la batería vieja para entregar"
+          class={CAMPO}
+        />
+      </label>
+
+      <button
+        type="submit"
+        data-cart-submit
+        disabled
+        class={`${BTN_NEGRO} mt-2 flex w-full items-center justify-center gap-2 px-4 py-3.5 text-center`}
+      >
+        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path
+            d="M12 2a10 10 0 0 0-8.7 15L2 22l5.2-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3.1-.2 0-.4 0-.5s-.6-1.4-.8-1.9-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.9 11.9 0 0 0 4.6 4c1.6.6 2.2.7 3 .6a2.5 2.5 0 0 0 1.7-1.2 2 2 0 0 0 .1-1.2c-.1-.1-.3-.2-.6-.3Z"
+          ></path>
+        </svg>
+        <span>Enviar pedido por WhatsApp</span>
+      </button>
+
+      <p class="pb-2 text-xs leading-relaxed text-tinta/60">
+        Acá no se paga nada. Confirmamos stock y precio final por WhatsApp.
+      </p>
+    </form>
+  </aside>
+</div>
+
+<script>
+  import {
+    CART_EVENT,
+    addItem,
+    cartCount,
+    cartTotal,
+    lineId,
+    readCart,
+    removeItem,
+    setQty,
+    type CartItem,
+  } from '../lib/cart';
+  import { buildOrderMessage, whatsappLink } from '../lib/whatsapp';
+  import { formatPrice } from '../lib/money';
+
+  const root = document.querySelector<HTMLElement>('[data-cart-root]');
+  // No se puede importar data/config aca: corre en el navegador y ese modulo depende de D1.
+  const WHATSAPP = root?.dataset.whatsapp ?? '';
+  const titulo = document.querySelector<HTMLElement>('[data-cart-titulo]');
+  const pasoItems = document.querySelector<HTMLElement>('[data-paso="items"]');
+  const pasoDatos = document.querySelector<HTMLElement>('[data-paso="datos"]');
+  const itemsBox = document.querySelector<HTMLElement>('[data-cart-items]');
+  const foot = document.querySelector<HTMLElement>('[data-cart-foot]');
+  const totalBox = document.querySelector<HTMLElement>('[data-cart-total]');
+  const resumen = document.querySelector<HTMLElement>('[data-cart-resumen]');
+  const form = document.querySelector<HTMLFormElement>('[data-cart-form]');
+  const submit = document.querySelector<HTMLButtonElement>('[data-cart-submit]');
+  const mini = document.querySelector<HTMLElement>('[data-cart-mini]');
+  const miniCount = document.querySelector<HTMLElement>('[data-mini-count]');
+  const miniTotal = document.querySelector<HTMLElement>('[data-mini-total]');
+
+  // El catalogo lo carga el cliente desde el panel: nunca se inyecta texto sin escapar.
+  function escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /**
+   * El boton confirma en su propio lugar y vuelve solo. El ancho se fija antes de
+   * cambiar el texto para que la grilla no se mueva mientras dice "Agregada".
+   */
+  function acusarRecibo(boton: HTMLElement): void {
+    if (boton.dataset.ocupado) return;
+    const original = boton.textContent ?? '';
+    boton.dataset.ocupado = '1';
+    boton.style.minWidth = `${boton.offsetWidth}px`;
+    boton.textContent = 'Agregada ✓';
+    animar(boton, 'late');
+    setTimeout(() => {
+      boton.textContent = original;
+      boton.style.minWidth = '';
+      delete boton.dataset.ocupado;
+    }, 1200);
+  }
+
+  /** Reinicia una animacion CSS: sin el reflow del medio, volver a poner la misma clase no la vuelve a disparar. */
+  function animar(el: Element | null | undefined, clase: string): void {
+    if (!el) return;
+    el.classList.remove(clase);
+    void (el as HTMLElement).offsetWidth;
+    el.classList.add(clase);
+  }
+
+  function mostrarPaso(paso: 'items' | 'datos', animado = true): void {
+    pasoItems?.classList.toggle('hidden', paso !== 'items');
+    pasoDatos?.classList.toggle('hidden', paso !== 'datos');
+    if (titulo) titulo.textContent = paso === 'items' ? 'Tu pedido' : 'Tus datos';
+
+    if (animado) {
+      // Avanzar entra desde la derecha; volver, desde la izquierda.
+      const visible = paso === 'items' ? pasoItems : pasoDatos;
+      visible?.classList.remove('entra', 'entra-atras');
+      animar(visible, paso === 'datos' ? 'entra' : 'entra-atras');
+    }
+
+    if (paso === 'datos') {
+      form?.querySelector<HTMLInputElement>('input[name="nombre"]')?.focus();
+    }
+  }
+
+  const SALIDA_MS = 300; // igual que la transicion de [data-cart-panel] en StoreLayout
+  let cierreProgramado: number | undefined;
+
+  function abrir(): void {
+    if (!root) return;
+    clearTimeout(cierreProgramado);
+    root.classList.remove('hidden');
+    document.body.classList.add('cart-open');
+    mostrarPaso('items', false);
+
+    // El frame de por medio le da al navegador el estado inicial desde el cual
+    // transicionar; sin el, el panel ya aparece en su posicion final. El setTimeout
+    // es la red: requestAnimationFrame no corre en pestañas de fondo, y sin esa clase
+    // el panel se queda invisible fuera de pantalla y el carrito parece no abrir.
+    requestAnimationFrame(() => root.classList.add('abierto'));
+    setTimeout(() => root.classList.add('abierto'), 60);
+  }
+
+  function cerrar(): void {
+    if (!root || root.classList.contains('hidden')) return;
+    root.classList.remove('abierto');
+    document.body.classList.remove('cart-open');
+
+    // Se esconde recien cuando termino de salir, para que la salida se vea. El timeout
+    // no es adorno: si la transicion nunca arranca (pestaña de fondo, movimiento
+    // reducido, transform pisado por otra regla) el transitionend no llega nunca y el
+    // carrito se quedaria abierto tapando el sitio.
+    clearTimeout(cierreProgramado);
+    cierreProgramado = window.setTimeout(() => root.classList.add('hidden'), SALIDA_MS);
+  }
+
+  function lineaHtml(item: CartItem): string {
+    const id = escapeHtml(lineId(item));
+    const borne = item.borne
+      ? `<span class="mt-1 inline-flex items-center rounded-fila bg-fila px-2 py-0.5 text-[11px] font-semibold text-tinta/70">Borne ${escapeHtml(item.borne)}</span>`
+      : '';
+    const foto = escapeHtml(item.imagen || '/sin-foto.svg');
+    const nombre = escapeHtml(item.nombre);
+    const tienePrecio = item.precio > 0;
+    const precioUnitario = tienePrecio && item.qty > 1
+      ? `<span class="block text-[11px] font-normal text-tinta/50">${formatPrice(item.precio)} c/u</span>`
+      : '';
+    const subtotalTexto = tienePrecio ? formatPrice(item.precio * item.qty) : 'A consultar';
+
+    return `
+      <article class="flex items-center gap-3.5 border-b border-black/10 py-3.5 last:border-0">
+        <div class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-card border border-black/10 bg-lienzo p-1.5">
+          <img src="${foto}"
+               alt="${nombre}"
+               width="80" height="80"
+               onerror="this.onerror=null;this.src='/sin-foto.svg'"
+               class="h-full w-full object-contain" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-bold leading-snug text-tintaFuerte">${nombre}</p>
+          ${borne}
+          <div class="flex items-center justify-between pt-2">
+            <div class="flex items-center overflow-hidden rounded-fila border border-black/15 bg-white">
+              <button type="button" data-line-dec data-id="${id}" aria-label="Quitar una"
+                      class="h-8 w-8 text-base font-bold leading-none text-tintaFuerte hover:bg-fila transition-colors">-</button>
+              <span class="precio min-w-[28px] text-center text-[13px] font-bold text-tintaFuerte">${item.qty}</span>
+              <button type="button" data-line-inc data-id="${id}" aria-label="Agregar una"
+                      class="h-8 w-8 text-base font-bold leading-none text-tintaFuerte hover:bg-fila transition-colors">+</button>
+            </div>
+            <div class="text-right">
+              <p class="precio font-extrabold text-tintaFuerte">${subtotalTexto}</p>
+              ${precioUnitario}
+              <button type="button" data-line-remove data-id="${id}"
+                      class="text-xs text-tinta/60 underline hover:text-rojo">Quitar</button>
+            </div>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  // Para latir solo cuando el numero cambia de verdad, no en cada render.
+  let ultimoCount = -1;
+
+  function render(): void {
+    const items = readCart();
+    const count = cartCount(items);
+    const total = cartTotal(items);
+    const unpricedCount = items.filter((i) => i.precio <= 0).length;
+    let totalText = '';
+    if (total > 0 && unpricedCount > 0) {
+      totalText = `${formatPrice(total)} + cotiz.`;
+    } else if (total > 0) {
+      totalText = formatPrice(total);
+    } else {
+      totalText = 'A consultar';
+    }
+
+    const cambio = ultimoCount !== -1 && count !== ultimoCount;
+    ultimoCount = count;
+
+    document.querySelectorAll<HTMLElement>('[data-cart-count]').forEach((badge) => {
+      badge.textContent = `(${count})`;
+      badge.classList.toggle('hidden', count === 0);
+      if (cambio) animar(badge, 'late');
+    });
+
+    // El globito del boton flotante: mismo numero pero sin parentesis, y con flex en
+    // vez de inline para que quede centrado en el circulo.
+    document.querySelectorAll<HTMLElement>('[data-cart-badge]').forEach((badge) => {
+      badge.textContent = String(count);
+      badge.classList.toggle('hidden', count === 0);
+      badge.classList.toggle('flex', count > 0);
+      if (cambio) animar(badge, 'late');
+    });
+
+    mini?.classList.toggle('hidden', count === 0);
+    document.body.classList.toggle('tiene-pedido', count > 0);
+    if (miniCount) miniCount.textContent = count === 1 ? '1 batería' : `${count} baterías`;
+    if (miniTotal) {
+      miniTotal.textContent = totalText;
+      if (cambio) animar(miniTotal, 'late');
+    }
+    if (cambio) animar(totalBox, 'late');
+
+    if (!itemsBox || !foot) return;
+
+    if (items.length === 0) {
+      itemsBox.innerHTML = `
+        <div class="py-16 text-center">
+          <p class="text-[15px] text-tinta/60">Todavía no agregaste nada.</p>
+          <a href="#catalogo" data-cart-close class="mt-2 inline-block text-[15px] font-bold text-tintaFuerte underline">Ver el catálogo</a>
+        </div>`;
+      foot.classList.add('hidden');
+      mostrarPaso('items');
+      return;
+    }
+
+    itemsBox.innerHTML = items.map(lineaHtml).join('');
+    foot.classList.remove('hidden');
+    if (totalBox) totalBox.textContent = totalText;
+    if (resumen) {
+      const cuantas = count === 1 ? '1 batería' : `${count} baterías`;
+      resumen.textContent = `${cuantas} · ${totalText}`;
+    }
+  }
+
+  function validar(): void {
+    if (!form || !submit) return;
+    const data = new FormData(form);
+    const nombre = String(data.get('nombre') ?? '').trim();
+    const vehiculo = String(data.get('vehiculo') ?? '').trim();
+    submit.disabled = nombre.length < 2 || vehiculo.length < 2;
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+
+    if (target.closest('[data-cart-open]')) {
+      abrir();
+      return;
+    }
+    if (target.closest('[data-cart-close]') || target.closest('[data-cart-backdrop]')) {
+      cerrar();
+      return;
+    }
+    if (target.closest('[data-paso-siguiente]')) {
+      mostrarPaso('datos');
+      return;
+    }
+    if (target.closest('[data-paso-volver]')) {
+      mostrarPaso('items');
+      return;
+    }
+
+    const addBtn = target.closest<HTMLButtonElement>('[data-add-to-cart]');
+    if (addBtn) {
+      if (addBtn.disabled) return;
+      const raw = addBtn.getAttribute('data-item');
+      if (!raw) return;
+      try {
+        addItem(JSON.parse(raw) as Omit<CartItem, 'qty'>);
+        // El carrito no se abre solo: interrumpe a quien está comparando medidas. El
+        // botón acusa recibo y la barra de abajo muestra el total.
+        acusarRecibo(addBtn);
+      } catch (error) {
+        console.error('Batería mal formada en data-item:', error);
+      }
+      return;
+    }
+
+    const inc = target.closest<HTMLElement>('[data-line-inc]');
+    const dec = target.closest<HTMLElement>('[data-line-dec]');
+    const del = target.closest<HTMLElement>('[data-line-remove]');
+    if (!inc && !dec && !del) return;
+
+    const id = (inc ?? dec ?? del)!.getAttribute('data-id') ?? '';
+    const item = readCart().find((i) => lineId(i) === id);
+    if (!item) return;
+
+    // Sacar la ultima con "-" tambien borra la linea: se anima igual que "Quitar".
+    const desaparece = Boolean(del) || (Boolean(dec) && item.qty === 1);
+    const linea = (inc ?? dec ?? del)!.closest('article');
+
+    const aplicar = () => {
+      if (inc) setQty(id, item.qty + 1);
+      else if (dec) setQty(id, item.qty - 1);
+      else removeItem(id);
+    };
+
+    if (desaparece && linea && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // Lo que llegue primero manda: el evento si la animacion corrio, o el timeout si
+      // no (pestaña de fondo, animaciones apagadas). Sin la red, un clic en "Quitar"
+      // dejaria la linea tachada en pantalla y la bateria igual en el pedido.
+      let hecho = false;
+      const unaVez = () => {
+        if (hecho) return;
+        hecho = true;
+        aplicar();
+      };
+      linea.classList.add('linea-sale');
+      linea.addEventListener('animationend', unaVez, { once: true });
+      setTimeout(unaVez, 260);
+      return;
+    }
+    aplicar();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') cerrar();
+  });
+
+  const sucursalField = form?.querySelector<HTMLElement>('[data-sucursal-field]');
+  const actualizarSucursal = () => {
+    const entregaRadio = form?.elements.namedItem('entrega') as RadioNodeList | null;
+    const val = entregaRadio?.value;
+    if (sucursalField) {
+      sucursalField.style.display = val === 'Paso por el local' ? 'block' : 'none';
+    }
+  };
+  form?.addEventListener('change', (e) => {
+    if ((e.target as HTMLInputElement).name === 'entrega') {
+      actualizarSucursal();
+    }
+  });
+
+  form?.addEventListener('input', validar);
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const items = readCart();
+    if (items.length === 0) return;
+
+    const data = new FormData(form);
+    const tipoEntrega = String(data.get('entrega') ?? '');
+    const sucursalElegida = String(data.get('sucursal') ?? '');
+    const entregaFinal =
+      tipoEntrega === 'Paso por el local' && sucursalElegida
+        ? `Paso por el local (${sucursalElegida})`
+        : tipoEntrega;
+
+    const mensaje = buildOrderMessage(items, {
+      nombre: String(data.get('nombre') ?? '').trim(),
+      vehiculo: String(data.get('vehiculo') ?? '').trim(),
+      entrega: entregaFinal,
+      nota: String(data.get('nota') ?? '').trim() || undefined,
+    });
+
+    const url = whatsappLink(mensaje, WHATSAPP);
+    const ventana = window.open(url, '_blank', 'noopener');
+    if (!ventana) window.location.href = url;
+  });
+
+  window.addEventListener(CART_EVENT, render);
+  render();
+  validar();
+  actualizarSucursal();
+</script>

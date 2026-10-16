@@ -1,0 +1,105 @@
+---
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import CartDrawer from '../components/CartDrawer.astro';
+import MobileCartBar from '../components/MobileCartBar.astro';
+import CartFab from '../components/CartFab.astro';
+import '../styles/fuentes.css';
+import '../styles/global.css';
+
+const { SITE } = Astro.locals.config;
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description = SITE.descripcion } = Astro.props;
+const pageTitle = title ? `${title} | ${SITE.nombre}` : `${SITE.nombre} — ${SITE.tagline}`;
+---
+
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#030303" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {/* Las dos que se ven en la primera pantalla. Sin preload el texto salta de fuente
+        a mitad de carga, y con la expandida el salto es enorme: cambia el ancho de
+        cada palabra del titular. */}
+    <link rel="preload" href="/fuentes/zalando-expanded-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fuentes/manrope-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:image" content={new URL('/og-image.png', Astro.url).href} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+  </head>
+  <body class="flex min-h-screen flex-col bg-pagina font-sans text-tinta antialiased">
+    <Nav />
+    <main class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    <CartDrawer />
+    <MobileCartBar />
+    <CartFab />
+
+    <script>
+      /**
+       * Un solo IntersectionObserver para toda la página: agrega .visto la primera
+       * vez que un [data-reveal] entra en pantalla y lo deja de observar. Si el que
+       * pidió menos movimiento (prefers-reduced-motion) llega acá, salta derecho a
+       * .visto sin pasar por .por-ver, así nunca ve nada aparecer de la nada.
+       */
+      const bloques = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (bloques.length > 0 && !sinMovimiento && 'IntersectionObserver' in window) {
+        bloques.forEach((b) => b.classList.add('por-ver'));
+        const observador = new IntersectionObserver(
+          (entradas) => {
+            for (const entrada of entradas) {
+              if (!entrada.isIntersecting) continue;
+              entrada.target.classList.remove('por-ver');
+              entrada.target.classList.add('visto');
+              observador.unobserve(entrada.target);
+            }
+          },
+          { threshold: 0.15 },
+        );
+        bloques.forEach((b) => observador.observe(b));
+      }
+
+      /**
+       * Prende/apaga el fundido de cada [data-scroll-fundido] según si ya está en la
+       * punta de ese lado -- si no, el último ítem real (nada más para scrollear)
+       * quedaría siempre medio transparente. Un solo listener delegado por evento
+       * (scroll no burbujea, así que va con capture) en vez de uno por contenedor.
+       */
+      const contenedoresFundido = document.querySelectorAll<HTMLElement>('[data-scroll-fundido]');
+      if (contenedoresFundido.length > 0) {
+        const HOLGURA = 2;
+        const actualizarFundido = (el: HTMLElement): void => {
+          if (el.dataset.scrollFundido === 'vertical') {
+            el.classList.toggle('en-tope-inicio', el.scrollTop <= HOLGURA);
+            el.classList.toggle('en-tope-fin', el.scrollTop + el.clientHeight >= el.scrollHeight - HOLGURA);
+          } else {
+            el.classList.toggle('en-tope-inicio', el.scrollLeft <= HOLGURA);
+            el.classList.toggle('en-tope-fin', el.scrollLeft + el.clientWidth >= el.scrollWidth - HOLGURA);
+          }
+        };
+        contenedoresFundido.forEach((el) => {
+          actualizarFundido(el);
+          el.addEventListener('scroll', () => actualizarFundido(el), { passive: true });
+        });
+        window.addEventListener('resize', () => contenedoresFundido.forEach(actualizarFundido));
+      }
+    </script>
+  </body>
+</html>

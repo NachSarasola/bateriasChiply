@@ -1,0 +1,55 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { getAllBaterias, fotoPrincipal } from '../../../lib/catalog';
+import { formatPrice } from '../../../lib/money';
+
+const db = Astro.locals.runtime.env.DB;
+const baterias = await getAllBaterias(db);
+---
+
+<AdminLayout title="Baterías">
+  <div class="flex items-center justify-between pb-5">
+    <p class="text-sm text-plata/60">
+      {baterias.length} {baterias.length === 1 ? 'batería' : 'baterías'}
+    </p>
+    <a
+      href="/admin/baterias/nueva"
+      class="rounded-card bg-amarillo px-5 py-3 text-sm font-bold text-carbon transition-colors hover:bg-amarilloOscuro"
+    >
+      Nueva batería
+    </a>
+  </div>
+
+  {
+    baterias.length === 0 ? (
+      <p class="rounded-card border border-white/10 bg-admin-panel py-16 text-center text-[15px] text-plata/60">
+        Todavía no cargaste ninguna batería.
+      </p>
+    ) : (
+      <div class="divide-y divide-white/10 overflow-hidden rounded-card border border-white/10 bg-admin-panel">
+        {baterias.map((b) => (
+          <a href={`/admin/baterias/${b.id}`} class="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-white/5">
+            <img
+              src={fotoPrincipal(b)}
+              alt=""
+              width="56"
+              height="56"
+              class="h-14 w-14 shrink-0 rounded-fila border border-white/10 bg-white/5 p-1 object-contain"
+            />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-[15px] font-bold text-white">
+                {b.codigo} · {b.nombre}
+              </p>
+              <p class="truncate text-xs text-plata/70">
+                {b.tipoNombre}
+                {b.aplicacion && ` · ${b.aplicacion}`}
+                {!b.stock && ' · SIN STOCK'}
+              </p>
+            </div>
+            <p class="precio shrink-0 text-[15px] font-bold text-amarillo">{formatPrice(b.precio)}</p>
+          </a>
+        ))}
+      </div>
+    )
+  }
+</AdminLayout>

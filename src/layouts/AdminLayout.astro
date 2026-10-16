@@ -1,0 +1,66 @@
+---
+import LogoChiply from '../components/LogoChiply.astro';
+import '../styles/fuentes.css';
+
+/**
+ * El panel va en claro aunque el sitio sea oscuro: son formularios largos y una
+ * pantalla de carga de datos en negro cansa la vista. La barra de arriba mantiene el
+ * fondo del sitio para que no se sienta otra aplicación.
+ */
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const path = Astro.url.pathname;
+const activa = (href: string) => path === href || path.startsWith(`${href}/`);
+
+const links = [
+  { href: '/admin/baterias', label: 'Baterías' },
+  { href: '/admin/textos', label: 'Textos' },
+];
+---
+
+<!doctype html>
+<html lang="es-AR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} | Baterías Chiply</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="min-h-screen bg-black font-sans text-white antialiased">
+    <header class="sticky top-0 z-10 border-b border-white/10 bg-admin-fondo">
+      <div class="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:py-3.5">
+        <a href="/admin/baterias" class="shrink-0">
+          <LogoChiply clase="h-10 sm:h-12" />
+        </a>
+        <nav class="flex items-center gap-4 text-sm">
+          {
+            links.map((l) => (
+              <a
+                href={l.href}
+                class:list={[
+                  'py-1 font-medium transition-colors',
+                  activa(l.href) ? 'font-bold text-amarillo' : 'text-plata/70 hover:text-white',
+                ]}
+              >
+                {l.label}
+              </a>
+            ))
+          }
+          <a href="/" target="_blank" class="text-plata/70 transition-colors hover:text-white">Ver sitio</a>
+          <form method="POST" action="/api/admin/logout">
+            <button type="submit" class="text-plata/70 underline transition-colors hover:text-white">Salir</button>
+          </form>
+        </nav>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 py-8">
+      <h1 class="pb-6 text-2xl font-bold text-white">{title}</h1>
+      <slot />
+    </main>
+  </body>
+</html>

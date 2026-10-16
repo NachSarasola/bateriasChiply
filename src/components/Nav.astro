@@ -1,0 +1,98 @@
+---
+import LogoChiply from './LogoChiply.astro';
+import { whatsappLink, buildGeneralMessage } from '../lib/whatsapp';
+
+const { SITE } = Astro.locals.config;
+const wa = whatsappLink(buildGeneralMessage(), SITE.whatsapp);
+
+/**
+ * El mockup traía esta banda flotando sobre el gris, con margen a los costados y
+ * muy redondeada, sin ningún link adentro (la navegación vivía en el pie). Eso
+ * cambió a pedido explícito: ahora ocupa todo el ancho -- mismo gesto que el pie
+ * (`Footer.astro`: banda `bg-carbon` de punta a punta con brillo diagonal, y un
+ * `max-w-shell` adentro para alinear el contenido) -- y suma navegación. Sticky
+ * para que quede a mano mientras se scrollea; el offset lo cubre
+ * `scroll-padding-top` en StoreLayout.astro.
+ */
+const NAV = [
+  { href: '#catalogo', label: 'Catálogo' },
+  { href: '#donde', label: 'Sucursales' },
+  { href: wa, label: 'WhatsApp', externo: true },
+];
+---
+
+<header id="inicio" class="sticky top-0 z-40 overflow-hidden bg-carbon">
+  {/* El brillo diagonal es el mismo gesto que el pie: una banda casi negra, no
+      plana, con un reflejo de gradiente cruzándola. Va con estilo inline porque
+      es un gradiente puntual de este componente, no un token reutilizable. */}
+  <div
+    class="pointer-events-none absolute inset-0"
+    style="background-image: linear-gradient(135deg, #030303 0%, #030303 38%, rgba(255,255,255,0.14) 50%, #030303 62%, #030303 100%)"
+  >
+  </div>
+
+  <div class="relative mx-auto flex max-w-shell items-center justify-between gap-6 px-4 py-3 sm:px-6 sm:py-3.5">
+    <a href="#inicio" data-logo-top class="relative shrink-0 cursor-pointer" aria-label="Ir al inicio">
+      <LogoChiply clase="h-10 sm:h-12" />
+    </a>
+
+    {/* Oculto en mobile: tres links de texto no entran al lado del logo y el
+        carrito en una pantalla chica, y en el celular ya se navega scrolleando.
+        Texto liso (no píldora) para no competirle al carrito, que es el único
+        botón "de acción" del header. */}
+    <nav class="hidden items-center gap-6 md:flex">
+      {NAV.map((item) => (
+        <a
+          href={item.href}
+          target={item.externo ? '_blank' : undefined}
+          rel={item.externo ? 'noopener' : undefined}
+          class="text-sm font-bold text-plata transition-colors hover:text-amarillo"
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <button
+      type="button"
+      data-cart-open
+      aria-label="Ver mi pedido"
+      class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amarillo text-tintaFuerte transition-colors hover:bg-amarilloOscuro active:bg-amarilloOscuro sm:h-11 sm:w-11"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="h-5 w-5 sm:h-6 sm:w-6"
+        aria-hidden="true"
+      >
+        <path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.2a1.5 1.5 0 0 0 1.5-1.2L20.5 8H6" />
+        <circle cx="9.5" cy="20" r="1.4" />
+        <circle cx="17.5" cy="20" r="1.4" />
+      </svg>
+
+      {/* El contador lo escribe el render() de CartDrawer, igual que en CartFab. */}
+      <span
+        data-cart-badge
+        class="precio absolute -right-1 -top-1 hidden h-5 min-w-[1.25rem] items-center justify-center rounded-full border-2 border-carbon bg-carbon px-1 text-[11px] font-extrabold text-amarillo"
+      >
+        0
+      </span>
+    </button>
+  </div>
+</header>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-logo-top]').forEach((logo) => {
+    logo.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.location.hash) {
+        history.pushState(null, '', window.location.pathname);
+      }
+    });
+  });
+</script>

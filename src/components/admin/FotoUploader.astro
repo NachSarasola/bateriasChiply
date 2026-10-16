@@ -1,0 +1,164 @@
+---
+interface Props {
+  /** URLs ya cargadas (modo edición). La primera es la foto principal de la batería. */
+  inicial?: string[];
+}
+
+const { inicial = [] } = Astro.props;
+---
+
+<div data-foto-uploader>
+  <input type="hidden" name="imagenes" data-imagenes-json value={JSON.stringify(inicial)} />
+
+  <div data-lista-fotos class="grid grid-cols-3 gap-2 pb-3 sm:grid-cols-4"></div>
+
+  <label
+    class="flex cursor-pointer flex-col items-center gap-1 rounded-card border border-dashed border-white/20 bg-admin-campo px-4 py-6 text-center text-[13px] text-plata/70 transition-colors hover:border-amarillo"
+    data-dropzone
+  >
+    <span class="font-medium text-white">Arrastrá fotos, o hacé clic</span>
+    <span class="text-[12px] text-plata/60">La primera es la principal</span>
+    <input
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      multiple
+      data-input-fotos
+      class="sr-only"
+    />
+  </label>
+
+  <p data-estado-fotos class="pt-2 text-[13px] text-plata/60"></p>
+</div>
+
+<script>
+  /**
+   * Resize del lado del navegador: reemplaza lo que hacia sharp en el servidor.
+   * El runtime de Workers no soporta bindings nativos, asi que esto tiene que
+   * pasar antes de que la foto salga del dispositivo de quien la sube.
+   */
+  const ANCHO_GRANDE = 1000;
+  const ANCHO_CHICO = 500;
+  const CALIDAD = 0.8;
+
+  async function redimensionar(archivo: File, anchoObjetivo: number): Promise<Blob> {
+    const bitmap = await createImageBitmap(archivo, { imageOrientation: 'from-image' });
+    const factor = Math.min(1, anchoObjetivo / bitmap.width);
+    const ancho = Math.round(bitmap.width * factor);
+    const alto = Math.round(bitmap.height * factor);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = ancho;
+    canvas.height = alto;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('El navegador no soporta canvas 2d.');
+    ctx.drawImage(bitmap, 0, 0, ancho, alto);
+    bitmap.close();
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('No se pudo generar la imagen.'))),
+        'image/webp',
+        CALIDAD,
+      );
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-foto-uploader]').forEach((raiz) => {
+    const hidden = raiz.querySelector<HTMLInputElement>('[data-imagenes-json]');
+    const lista = raiz.querySelector<HTMLElement>('[data-lista-fotos]');
+    const input = raiz.querySelector<HTMLInputElement>('[data-input-fotos]');
+    const dropzone = raiz.querySelector<HTMLElement>('[data-dropzone]');
+    const estado = raiz.querySelector<HTMLElement>('[data-estado-fotos]');
+    if (!hidden || !lista || !input || !dropzone) return;
+
+    let urls: string[] = JSON.parse(hidden.value || '[]');
+
+    function guardar(): void {
+      if (!hidden) return;
+      hidden.value = JSON.stringify(urls);
+      renderizar();
+    }
+
+    function renderizar(): void {
+      if (!lista) return;
+      lista.innerHTML = urls
+        .map(
+          (url, i) => `
+        <div class="relative overflow-hidden rounded-fila border bg-admin-campo ${i === 0 ? 'border-amarillo' : 'border-white/15'}">
+          <img src="${url}" alt="" class="aspect-square w-full bg-white/5 object-contain p-1" />
+          ${i === 0 ? '<p class="absolute left-0 top-0 rounded-br-fila bg-amarillo px-1.5 py-0.5 text-[10px] font-bold text-carbon">Principal</p>' : ''}
+          <div class="flex divide-x divide-white/10 border-t border-white/10 text-[11px] text-plata">
+            <button type="button" data-mover="-1" data-i="${i}" ${i === 0 ? 'disabled' : ''} class="flex-1 py-1 transition-colors disabled:opacity-30 hover:text-white">Subir</button>
+            <button type="button" data-mover="1" data-i="${i}" ${i === urls.length - 1 ? 'disabled' : ''} class="flex-1 py-1 transition-colors disabled:opacity-30 hover:text-white">Bajar</button>
+            <button type="button" data-quitar data-i="${i}" class="flex-1 py-1 transition-colors hover:text-red-400">Quitar</button>
+          </div>
+        </div>`,
+        )
+        .join('');
+    }
+
+    lista.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const i = Number(target.dataset.i);
+
+      const mover = target.dataset.mover;
+      if (mover) {
+        const j = i + Number(mover);
+        [urls[i], urls[j]] = [urls[j], urls[i]];
+        guardar();
+        return;
+      }
+      if (target.hasAttribute('data-quitar')) {
+        urls.splice(i, 1);
+        guardar();
+      }
+    });
+
+    async function procesarArchivos(archivos: FileList | File[]): Promise<void> {
+      const lote = Array.from(archivos);
+      for (let i = 0; i < lote.length; i++) {
+        if (estado) estado.textContent = `Subiendo ${i + 1} de ${lote.length}...`;
+        try {
+          const [principal, chica] = await Promise.all([
+            redimensionar(lote[i], ANCHO_GRANDE),
+            redimensionar(lote[i], ANCHO_CHICO),
+          ]);
+          const fd = new FormData();
+          fd.append('principal', principal, 'principal.webp');
+          fd.append('chica', chica, 'chica.webp');
+
+          const res = await fetch('/api/admin/fotos', { method: 'POST', body: fd });
+          if (!res.ok) throw new Error('El servidor no pudo guardar la foto.');
+          const data = (await res.json()) as { url: string };
+
+          urls.push(data.url);
+          guardar();
+        } catch (error) {
+          console.error(error);
+          if (estado) {
+            estado.textContent = `"${lote[i].name}" no se pudo subir. Probá con JPG, PNG o WEBP.`;
+          }
+        }
+      }
+      if (estado && estado.textContent?.startsWith('Subiendo')) estado.textContent = '';
+    }
+
+    input.addEventListener('change', () => {
+      if (input.files?.length) procesarArchivos(input.files);
+      input.value = '';
+    });
+
+    dropzone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      dropzone.classList.add('border-ink');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-ink'));
+    dropzone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      dropzone.classList.remove('border-ink');
+      if (event.dataTransfer?.files.length) procesarArchivos(event.dataTransfer.files);
+    });
+
+    renderizar();
+  });
+</script>

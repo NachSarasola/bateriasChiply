@@ -1,0 +1,258 @@
+---
+import { descuento, fotoPrincipal, srcSet, textoBuscable, type Bateria } from '../lib/catalog';
+import { BTN_NEGRO } from '../lib/ui';
+
+interface Props {
+  bateria: Bateria;
+  /** Las primeras entran con la página; el resto se cargan perezosas. */
+  prioridad?: boolean;
+}
+
+const { bateria: b, prioridad = false } = Astro.props;
+
+const foto = fotoPrincipal(b);
+// Todas las fotos de la ficha (frente, planta...). Con una sola no hay carrusel.
+const fotos = b.imagenes.length > 0 ? b.imagenes : [foto];
+const off = descuento(b);
+
+/**
+ * Las filas de specs, con las etiquetas del mockup real de Chiply (calcadas del
+ * prototipo, no traducidas: "Capacidad C20 (Ah)" y "Choque de arranque CCA-18° (A)"
+ * son el vocabulario de la hoja de specs del fabricante, el mismo que ya trae el CSV
+ * del cliente). La garantía NO va como fila: ya está en el sello sobre la foto.
+ */
+const specs = [
+  { k: 'Tensión', v: `${b.tension} V` },
+  { k: 'Capacidad C20 (Ah)', v: b.capacidadAh ? String(b.capacidadAh) : '—' },
+  { k: 'Reserva RC', v: b.reservaRc ? `${b.reservaRc} min` : '—' },
+  { k: 'Choque de arranque CCA-18° (A)', v: b.cca ? `${b.cca} A` : '—' },
+];
+
+/** Fila de 3 columnas propia, separada de la cebra -- asi la muestra el mockup. */
+const dimensiones = [
+  { k: 'Largo', v: b.largoMm ? `${b.largoMm} mm` : '—' },
+  { k: 'Ancho', v: b.anchoMm ? `${b.anchoMm} mm` : '—' },
+  { k: 'Alto', v: b.altoMm ? `${b.altoMm} mm` : '—' },
+];
+const hayDimensiones = Boolean(b.largoMm || b.anchoMm || b.altoMm);
+
+// Lo que el script del catálogo mete en el carrito. Va como JSON en un data-*
+// porque ese bloque es un módulo aparte y no puede leer estas variables del server.
+const item = {
+  codigo: b.codigo,
+  slug: b.slug,
+  nombre: b.nombre,
+  precio: b.precio,
+  imagen: foto,
+  borne: b.borne,
+};
+---
+
+<article
+  data-bateria
+  data-tipo={b.tipo}
+  data-buscar={textoBuscable(b)}
+  data-stock={b.stock ? '1' : '0'}
+  class:list={[
+    'flex flex-col rounded-card bg-tarjeta p-3 text-tinta border border-black/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.06)]',
+    !b.stock && 'opacity-70',
+  ]}
+>
+  <div class="relative">
+    {/* Carrusel de fotos de la ficha, con su propio margen y esquinas redondeadas
+        adentro de la tarjeta -- fondo neutro limpio para que la batería destaque sin cortes verdosos. */}
+    <div
+      data-carrusel
+      class="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-card bg-lienzo border border-black/[0.04]"
+    >
+      {
+        fotos.map((f, i) => (
+          <img
+            src={f}
+            srcset={srcSet(f)}
+            sizes="(min-width: 1024px) 300px, (min-width: 640px) 45vw, 92vw"
+            alt={i === 0 ? b.nombre : `${b.nombre}, vista ${i + 1}`}
+            width="400"
+            height="320"
+            loading={prioridad && i === 0 ? 'eager' : 'lazy'}
+            decoding={prioridad && i === 0 ? 'auto' : 'async'}
+            fetchpriority={prioridad && i === 0 ? 'high' : 'low'}
+            draggable="false"
+            class="aspect-[5/4] w-full shrink-0 snap-center rounded-card object-contain"
+          />
+        ))
+      }
+    </div>
+
+    {
+      fotos.length > 1 && (
+        <>
+          <button
+            type="button"
+            data-carrusel-mover="-1"
+            aria-label="Foto anterior"
+            class="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-tintaFuerte shadow hover:bg-white active:bg-white"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            data-carrusel-mover="1"
+            aria-label="Foto siguiente"
+            class="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-tintaFuerte shadow hover:bg-white active:bg-white"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <div data-carrusel-puntos class="absolute inset-x-0 bottom-2 flex justify-center gap-1.5" aria-hidden="true">
+            {fotos.map((_, i) => (
+              <span
+                class:list={[
+                  'h-1.5 w-1.5 rounded-full transition-colors',
+                  i === 0 ? 'bg-carbon' : 'bg-tintaFuerte/30',
+                ]}
+              />
+            ))}
+          </div>
+        </>
+      )
+    }
+
+    {/* El sello de garantía, calcado del mockup: círculo gris carbón con el número
+        en amarillo y "MESES" en blanco, superpuesto sobre la foto. */}
+    <div class="absolute right-2 top-2 flex h-11 w-11 sm:h-12 sm:w-12 flex-col items-center justify-center rounded-full bg-badge text-white shadow-sm">
+      <span class="precio text-sm font-extrabold leading-none text-amarillo">{b.garantiaMeses}</span>
+      <span class="text-[8px] font-bold uppercase leading-tight tracking-wide">meses</span>
+    </div>
+
+    {off && (
+      <span
+        class="absolute left-2 top-2 rounded-fila bg-tintaFuerte px-2 py-0.5 text-[10px] font-bold text-white shadow-sm"
+      >
+        -{off}%
+      </span>
+    )}
+
+    {!b.stock && (
+      <span
+        class="absolute inset-x-2 bottom-2 rounded-fila bg-tintaFuerte/90 px-2 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-white"
+      >
+        Sin stock — consultanos
+      </span>
+    )}
+  </div>
+
+  <div class="flex flex-1 flex-col px-1 pt-3">
+    {/* El título reserva dos renglones y se recorta ahí: mantiene las specs
+        arrancando a la misma altura entre tarjetas vecinas, aunque un nombre corto
+        ocupe una sola línea. Itálica en el nombre y el código, como el logotipo y
+        las specs del mockup. */}
+    <h3 class="text-ficha line-clamp-2 min-h-[2.8rem] italic text-tintaFuerte">{b.nombre}</h3>
+    {/* La aplicación es opcional (la mayoría del catálogo real todavía no la tiene
+        cargada) y NO reserva alto cuando falta: reservar dos renglones vacíos era
+        el hueco que dejaba un salto grande entre la foto y las specs en casi toda
+        la grilla. Cuando está, se recorta a dos líneas. */}
+    {b.aplicacion && (
+      <p class="mt-1 line-clamp-2 text-xs italic leading-snug text-tinta/70">{b.aplicacion}</p>
+    )}
+
+    <dl class="mt-2 space-y-0.5">
+      {
+        specs.map((s, i) => (
+          <div
+            class:list={[
+              'flex items-baseline justify-between gap-3 rounded-fila px-2 py-1 text-xs sm:text-[13px]',
+              i % 2 === 1 ? 'bg-black/[0.04]' : 'bg-transparent',
+            ]}
+          >
+            <dt class="text-tinta/80 font-medium">{s.k}</dt>
+            <dd class="precio text-right font-bold text-tintaFuerte">{s.v}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    {/* Largo/Ancho/Alto en 3 columnas, separado de la lista con cebra -- así lo
+        muestra el mockup, no es una fila más adentro del <dl> de arriba. */}
+    {hayDimensiones && (
+      <div class="mt-2 grid grid-cols-3 gap-2 border-t border-black/10 pt-2 text-center">
+        {dimensiones.map((d) => (
+          <div>
+            <dt class="text-[11px] font-bold text-tinta/70">{d.k}</dt>
+            <dd class="precio text-[11px] font-semibold text-tintaFuerte">{d.v}</dd>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <div class="mt-auto pt-3">
+      <button
+        type="button"
+        data-add-to-cart
+        data-item={JSON.stringify(item)}
+        disabled={!b.stock}
+        class={`${BTN_NEGRO} flex h-11 w-full items-center justify-center`}
+      >
+        {b.stock ? 'Agregar al carrito' : 'Sin stock'}
+      </button>
+    </div>
+  </div>
+</article>
+
+<script>
+  /**
+   * Flechas y puntos del carrusel de cada tarjeta. Un solo listener delegado en
+   * document para las 40 tarjetas; el deslizamiento con el dedo lo hace el
+   * scroll-snap del CSS, sin JS.
+   */
+  function tiraDe(el: Element): HTMLElement | null {
+    return el.closest('article')?.querySelector<HTMLElement>('[data-carrusel]') ?? null;
+  }
+
+  function indiceDe(tira: HTMLElement): number {
+    return Math.round(tira.scrollLeft / tira.clientWidth);
+  }
+
+  function pintarPuntos(tira: HTMLElement): void {
+    const puntos = tira.parentElement?.querySelectorAll<HTMLElement>('[data-carrusel-puntos] > span');
+    if (!puntos) return;
+    const actual = indiceDe(tira);
+    puntos.forEach((p, i) => {
+      p.classList.toggle('bg-carbon', i === actual);
+      p.classList.toggle('bg-tintaFuerte/30', i !== actual);
+    });
+  }
+
+  document.addEventListener('click', (evento) => {
+    const boton = (evento.target as HTMLElement | null)?.closest<HTMLElement>('[data-carrusel-mover]');
+    if (!boton) return;
+    const tira = tiraDe(boton);
+    if (!tira) return;
+    const paso = Number(boton.dataset.carruselMover);
+    const total = tira.children.length;
+    // Da la vuelta en las puntas: desde la ultima foto, "siguiente" vuelve a la primera.
+    const destino = (indiceDe(tira) + paso + total) % total;
+    tira.scrollTo({ left: destino * tira.clientWidth, behavior: 'smooth' });
+  });
+
+  // Los puntos siguen al scroll, venga de las flechas o del dedo. Se pinta en el
+  // proximo frame y no en cada evento: el scroll dispara decenas por segundo.
+  document.querySelectorAll<HTMLElement>('[data-carrusel]').forEach((tira) => {
+    let pendiente = false;
+    tira.addEventListener(
+      'scroll',
+      () => {
+        if (pendiente) return;
+        pendiente = true;
+        requestAnimationFrame(() => {
+          pintarPuntos(tira);
+          pendiente = false;
+        });
+      },
+      { passive: true },
+    );
+  });
+</script>

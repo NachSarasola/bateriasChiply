@@ -1,0 +1,30 @@
+{
+  "name": "chiply-store",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "db:local": "wrangler d1 execute baterias-chiply-preview --local --file=./seed.sql",
+    "db:remote": "wrangler d1 execute baterias-chiply-preview --remote --file=./seed.sql",
+    "catalogo:local": "wrangler d1 execute baterias-chiply-preview --local --file=./catalogo.sql",
+    "catalogo:remote": "wrangler d1 execute baterias-chiply-preview --remote --file=./catalogo.sql"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.6.13",
+    "@astrojs/tailwind": "^5.1.3",
+    "astro": "^5.18.2",
+    "leaflet": "^1.9.4",
+    "tailwindcss": "^3.4.17"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^5.20260813.1",
+    "@types/leaflet": "^1.9.22",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.123.0"
+  }
+}

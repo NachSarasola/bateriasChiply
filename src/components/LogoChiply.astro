@@ -1,0 +1,44 @@
+---
+/**
+ * Logo real de Chiply. Es una imagen (`public/logo-chiply.png`), no texto: el
+ * logotipo del mockup tiene letras modificadas a mano (la H con la barra en
+ * diagonal, el punto de la i como rombo) — no es ninguna fuente de sistema, así
+ * que la única forma de ser fieles es usar el archivo real, no imitarlo con CSS.
+ *
+ * El PNG salió de recortar el propio mockup en Adobe XD a resolución nativa 3x y
+ * separar el fondo negro del logotipo (amarillo/blanco) por color — no es un
+ * archivo que mandó el cliente. Si en algún momento llega el logo definitivo de
+ * Chiply (vector o el mismo PNG en mejor calidad), se reemplaza
+ * `public/logo-chiply.png` y no hay que tocar este componente ni sus 4 usos.
+ */
+interface Props {
+  /** Alto del logo: clases `h-*` de Tailwind (antes controlaba tamaño de texto, ahora la imagen). */
+  clase?: string;
+  /** El pie del logo. En el nav va vacío; en el footer, la ciudad. */
+  sub?: string;
+}
+
+const { clase = 'h-11', sub } = Astro.props;
+// Proporción real del archivo (720x200): sirve para que el navegador reserve el
+// alto correcto sin esperar a que la imagen cargue, aunque el alto final lo
+// termine fijando `clase`.
+const ANCHO = 707;
+const ALTO = 195;
+---
+
+<span class="inline-flex flex-col items-start leading-none">
+  <img
+    src="/logo-chiply.png"
+    alt="Baterías Chiply"
+    width={ANCHO}
+    height={ALTO}
+    class:list={['w-auto', clase]}
+  />
+  {
+    sub && (
+      <span class="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-plomo">
+        {sub}
+      </span>
+    )
+  }
+</span>

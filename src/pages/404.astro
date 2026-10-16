@@ -1,0 +1,20 @@
+---
+import StoreLayout from '../layouts/StoreLayout.astro';
+---
+
+<StoreLayout title="Página no encontrada">
+  <div class="mx-auto max-w-shell px-4 py-24">
+    <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-tinta">error 404</p>
+    <h1 class="pt-3 text-3xl font-bold text-tintaFuerte sm:text-seccion">Esta página no existe</h1>
+    <p class="max-w-md pt-3 leading-relaxed text-tinta/70">
+      El link vino mal o quedó de una versión anterior del sitio. Todo el catálogo
+      está en la página principal.
+    </p>
+    <a
+      href="/"
+      class="mt-6 inline-flex h-12 items-center rounded-full bg-carbon px-6 text-sm font-bold text-amarillo hover:bg-tintaFuerte"
+    >
+      Ir al catálogo
+    </a>
+  </div>
+</StoreLayout>

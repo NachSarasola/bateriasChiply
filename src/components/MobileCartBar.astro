@@ -1,0 +1,23 @@
+---
+// Barra fija de pedido. Solo aparece en celular y cuando hay algo en el carrito:
+// ahí es donde se compra y no conviene obligar a subir hasta el nav.
+---
+
+<div
+  data-cart-mini
+  class="fixed inset-x-0 bottom-0 z-30 hidden border-t border-white/10 bg-pizarra pb-[env(safe-area-inset-bottom,0px)] md:hidden shadow-[0_-4px_16px_rgba(0,0,0,0.3)]"
+>
+  <button
+    type="button"
+    data-cart-open
+    class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left active:bg-white/5"
+  >
+    <span>
+      <span data-mini-count class="block text-xs text-plomo">0 baterías</span>
+      <span data-mini-total class="precio block text-[17px] font-extrabold leading-tight text-white">
+        $0
+      </span>
+    </span>
+    <span class="rounded-card bg-carbon px-5 py-3 text-sm font-bold text-amarillo">Ver pedido</span>
+  </button>
+</div>

@@ -1,0 +1,16 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import BateriaForm from '../../../components/admin/BateriaForm.astro';
+import { getAllBaterias, getBateriaById, getTipos } from '../../../lib/catalog';
+
+const db = Astro.locals.runtime.env.DB;
+const id = Number(Astro.params.id);
+const bateria = Number.isFinite(id) ? await getBateriaById(db, id) : undefined;
+if (!bateria) return Astro.redirect('/admin/baterias');
+
+const tipos = getTipos(await getAllBaterias(db)).map((t) => t.nombre);
+---
+
+<AdminLayout title={`${bateria.codigo} · ${bateria.nombre}`}>
+  <BateriaForm bateria={bateria} tipos={tipos} />
+</AdminLayout>

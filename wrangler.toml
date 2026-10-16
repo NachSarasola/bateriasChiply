@@ -1,0 +1,17 @@
+name = "baterias-chiply"
+compatibility_date = "2026-08-21"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
+
+# El database_id se completa cuando se cree la base en la cuenta de Cloudflare de
+# Chiply (`npx wrangler d1 create baterias-chiply`). En local Miniflare no lo mira.
+[[d1_databases]]
+binding = "DB"
+database_name = "baterias-chiply-preview"
+database_id = "5d8a0452-59a6-4f10-a405-07d81e0644e4"
+
+# El bucket no se expone publicamente: las fotos salen por /fotos/* (src/pages/fotos/
+# [...ruta].ts), asi el sitio no depende de un dominio custom de R2 ni de r2.dev.
+[[r2_buckets]]
+binding = "FOTOS"
+bucket_name = "chiply-fotos-preview"
