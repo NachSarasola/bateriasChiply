@@ -80,11 +80,10 @@ const input =
     <p data-ok class="hidden rounded-fila border border-emerald-500/50 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-400">Guardado.</p>
 
     {
-      grupos.map((grupo) => (
-        <fieldset class="space-y-4 rounded-card border border-white/10 bg-admin-panel p-5">
-          <legend class="float-left w-full pb-1 text-base font-bold text-white">
-            {grupo.titulo}
-          </legend>
+      grupos.map((grupo, i) => (
+        <details open={i === 0} class="rounded-card border border-white/10 bg-admin-panel">
+          <summary class="cursor-pointer select-none px-5 py-4 text-base font-bold text-white">{grupo.titulo}</summary>
+          <div class="space-y-4 border-t border-white/10 p-5">
           {grupo.campos.map((campo) => (
             <label class="block">
               <span class="text-[13px] font-bold text-white">{campo.etiqueta}</span>
@@ -111,7 +110,8 @@ const input =
               )}
             </label>
           ))}
-        </fieldset>
+          </div>
+        </details>
       ))
     }
 

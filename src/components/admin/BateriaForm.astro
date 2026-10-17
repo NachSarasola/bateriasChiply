@@ -14,6 +14,12 @@ const input =
   'mt-1 w-full rounded-fila border border-white/15 bg-admin-campo px-3 py-3 text-[15px] text-white outline-none transition-colors focus:border-amarillo';
 const etiqueta = 'text-[13px] font-bold text-white';
 const ayuda = 'text-xs text-plata/60';
+
+const hayOpcionales = Boolean(
+  bateria &&
+    (bateria.marca || bateria.precioTachado || bateria.capacidadAh || bateria.cca || bateria.reservaRc ||
+      bateria.borne || bateria.largoMm || bateria.descripcion || bateria.destacado || !bateria.libreMantenimiento),
+);
 ---
 
 <form data-bateria-form data-id={bateria?.id ?? ''} class="max-w-2xl space-y-6">
@@ -24,8 +30,6 @@ const ayuda = 'text-xs text-plata/60';
   </p>
 
   <section class="space-y-4 rounded-card border border-white/10 bg-admin-panel p-5">
-    <h2 class="text-base font-bold text-white">Identificación</h2>
-
     <div class="grid gap-4 sm:grid-cols-2">
       <label class="block">
         <span class={etiqueta}>Código</span>
@@ -65,8 +69,9 @@ const ayuda = 'text-xs text-plata/60';
       </label>
 
       <label class="block">
-        <span class={etiqueta}>Marca</span>
-        <input name="marca" type="text" value={bateria?.marca} placeholder="Opcional" class={input} />
+        <span class={etiqueta}>Precio</span>
+        <input name="precio" type="number" min="0" step="1" required value={bateria?.precio ?? 0} class={input} />
+        <span class={ayuda}>Con 0 la ficha dice "Consultar" y el botón manda a WhatsApp.</span>
       </label>
     </div>
 
@@ -79,140 +84,122 @@ const ayuda = 'text-xs text-plata/60';
         placeholder="T/Corolla - Ecosport - Gol Trend"
         class={input}
       />
-      <span class={ayuda}>
-        Los vehículos que la llevan. Es por donde más busca la gente: conviene poner
-        todos los modelos que te pregunten.
-      </span>
+      <span class={ayuda}>Los vehículos que la llevan. Es por donde más busca la gente.</span>
     </label>
-  </section>
 
-  <section class="space-y-4 rounded-card border border-white/10 bg-admin-panel p-5">
-    <h2 class="text-base font-bold text-white">Precio</h2>
-
-    <div class="grid gap-4 sm:grid-cols-2">
-      <label class="block">
-        <span class={etiqueta}>Precio</span>
-        <input name="precio" type="number" min="0" step="1" required value={bateria?.precio ?? 0} class={input} />
-        <span class={ayuda}>Con 0 la ficha dice "Consultar" y el botón manda a WhatsApp en vez de al carrito.</span>
-      </label>
-
-      <label class="block">
-        <span class={etiqueta}>Precio tachado</span>
-        <input
-          name="precioTachado"
-          type="number"
-          min="1"
-          step="1"
-          value={bateria?.precioTachado ?? ''}
-          placeholder="Opcional"
-          class={input}
-        />
-        <span class={ayuda}>Si es mayor al precio, se muestra el % de descuento.</span>
-      </label>
-    </div>
-  </section>
-
-  <section class="space-y-4 rounded-card border border-white/10 bg-admin-panel p-5">
-    <h2 class="text-base font-bold text-white">Ficha técnica</h2>
-    <p class={ayuda}>Todo lo de acá es opcional: lo que dejes vacío no aparece en la ficha.</p>
-
-    <div class="grid gap-4 sm:grid-cols-3">
-      <label class="block">
-        <span class={etiqueta}>Tensión (V)</span>
-        <input name="tension" type="number" min="1" step="1" value={bateria?.tension ?? 12} class={input} />
-      </label>
-
-      <label class="block">
-        <span class={etiqueta}>Capacidad (Ah)</span>
-        <input name="capacidadAh" type="number" min="1" step="1" value={bateria?.capacidadAh ?? ''} class={input} />
-      </label>
-
-      <label class="block">
-        <span class={etiqueta}>Garantía (meses)</span>
-        <input
-          name="garantiaMeses"
-          type="number"
-          min="1"
-          step="1"
-          value={bateria?.garantiaMeses ?? 12}
-          class={input}
-        />
-      </label>
-    </div>
-
-    <div class="grid gap-4 sm:grid-cols-3">
-      <label class="block">
-        <span class={etiqueta}>Arranque en frío (CCA)</span>
-        <input name="cca" type="number" min="1" step="1" value={bateria?.cca ?? ''} class={input} />
-      </label>
-
-      <label class="block">
-        <span class={etiqueta}>Reserva (min)</span>
-        <input name="reservaRc" type="number" min="1" step="1" value={bateria?.reservaRc ?? ''} class={input} />
-      </label>
-
-      <label class="block">
-        <span class={etiqueta}>Borne positivo</span>
-        <select name="borne" class={input}>
-          <option value="" class="bg-admin-campo text-white" selected={!bateria?.borne}>Sin especificar</option>
-          <option value="derecha" class="bg-admin-campo text-white" selected={bateria?.borne === 'derecha'}>A la derecha</option>
-          <option value="izquierda" class="bg-admin-campo text-white" selected={bateria?.borne === 'izquierda'}>A la izquierda</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="grid gap-4 sm:grid-cols-3">
-      <label class="block">
-        <span class={etiqueta}>Largo (mm)</span>
-        <input name="largoMm" type="number" min="1" step="1" value={bateria?.largoMm ?? ''} class={input} />
-      </label>
-
-      <label class="block">
-        <span class={etiqueta}>Ancho (mm)</span>
-        <input name="anchoMm" type="number" min="1" step="1" value={bateria?.anchoMm ?? ''} class={input} />
-      </label>
-
-      <label class="block">
-        <span class={etiqueta}>Alto (mm)</span>
-        <input name="altoMm" type="number" min="1" step="1" value={bateria?.altoMm ?? ''} class={input} />
-      </label>
-    </div>
-
-    <label class="block">
-      <span class={etiqueta}>Descripción</span>
-      <textarea name="descripcion" rows="3" class={input}>{bateria?.descripcion}</textarea>
-      <span class={ayuda}>Una o dos líneas, como se lo explicarías a un cliente en el mostrador.</span>
+    <label class="flex cursor-pointer items-center gap-2 text-sm text-plata">
+      <input type="checkbox" name="agotado" checked={bateria ? !bateria.stock : false} class="accent-amarillo" />
+      Sin stock
     </label>
-  </section>
-
-  <section class="space-y-4 rounded-card border border-white/10 bg-admin-panel p-5">
-    <h2 class="text-base font-bold text-white">Publicación</h2>
-
-    <div class="flex flex-wrap gap-5 text-sm text-plata">
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" name="destacado" checked={bateria?.destacado} class="accent-amarillo" />
-        Destacada (va en la portada)
-      </label>
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input
-          type="checkbox"
-          name="conMantenimiento"
-          checked={bateria ? !bateria.libreMantenimiento : false}
-          class="accent-amarillo"
-        />
-        Requiere control de nivel
-      </label>
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" name="agotado" checked={bateria ? !bateria.stock : false} class="accent-amarillo" />
-        Sin stock
-      </label>
-    </div>
 
     <div>
       <span class="block pb-1 text-[13px] font-bold text-white">Fotos</span>
       <FotoUploader inicial={bateria?.imagenes ?? []} />
     </div>
   </section>
+
+  <details class="rounded-card border border-white/10 bg-admin-panel" open={Boolean(bateria && hayOpcionales)}>
+    <summary class="cursor-pointer select-none px-5 py-4 text-base font-bold text-white">
+      Más datos <span class="text-sm font-normal text-plata/60">(opcional)</span>
+    </summary>
+    <div class="space-y-4 border-t border-white/10 p-5">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class={etiqueta}>Marca</span>
+          <input name="marca" type="text" value={bateria?.marca} class={input} />
+        </label>
+        <label class="block">
+          <span class={etiqueta}>Precio tachado</span>
+          <input name="precioTachado" type="number" min="1" step="1" value={bateria?.precioTachado ?? ''} class={input} />
+          <span class={ayuda}>Si es mayor al precio, se muestra el % de descuento.</span>
+        </label>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-3">
+        <label class="block">
+          <span class={etiqueta}>Tensión (V)</span>
+          <input name="tension" type="number" min="1" step="1" value={bateria?.tension ?? 12} class={input} />
+        </label>
+
+        <label class="block">
+          <span class={etiqueta}>Capacidad (Ah)</span>
+          <input name="capacidadAh" type="number" min="1" step="1" value={bateria?.capacidadAh ?? ''} class={input} />
+        </label>
+
+        <label class="block">
+          <span class={etiqueta}>Garantía (meses)</span>
+          <input
+            name="garantiaMeses"
+            type="number"
+            min="1"
+            step="1"
+            value={bateria?.garantiaMeses ?? 12}
+            class={input}
+          />
+        </label>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-3">
+        <label class="block">
+          <span class={etiqueta}>Arranque en frío (CCA)</span>
+          <input name="cca" type="number" min="1" step="1" value={bateria?.cca ?? ''} class={input} />
+        </label>
+
+        <label class="block">
+          <span class={etiqueta}>Reserva (min)</span>
+          <input name="reservaRc" type="number" min="1" step="1" value={bateria?.reservaRc ?? ''} class={input} />
+        </label>
+
+        <label class="block">
+          <span class={etiqueta}>Borne positivo</span>
+          <select name="borne" class={input}>
+            <option value="" class="bg-admin-campo text-white" selected={!bateria?.borne}>Sin especificar</option>
+            <option value="derecha" class="bg-admin-campo text-white" selected={bateria?.borne === 'derecha'}>A la derecha</option>
+            <option value="izquierda" class="bg-admin-campo text-white" selected={bateria?.borne === 'izquierda'}>A la izquierda</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-3">
+        <label class="block">
+          <span class={etiqueta}>Largo (mm)</span>
+          <input name="largoMm" type="number" min="1" step="1" value={bateria?.largoMm ?? ''} class={input} />
+        </label>
+
+        <label class="block">
+          <span class={etiqueta}>Ancho (mm)</span>
+          <input name="anchoMm" type="number" min="1" step="1" value={bateria?.anchoMm ?? ''} class={input} />
+        </label>
+
+        <label class="block">
+          <span class={etiqueta}>Alto (mm)</span>
+          <input name="altoMm" type="number" min="1" step="1" value={bateria?.altoMm ?? ''} class={input} />
+        </label>
+      </div>
+
+      <label class="block">
+        <span class={etiqueta}>Descripción</span>
+        <textarea name="descripcion" rows="3" class={input}>{bateria?.descripcion}</textarea>
+        <span class={ayuda}>Una o dos líneas, como se lo explicarías a un cliente en el mostrador.</span>
+      </label>
+
+      <div class="flex flex-wrap gap-5 text-sm text-plata">
+        <label class="flex cursor-pointer items-center gap-2">
+          <input type="checkbox" name="destacado" checked={bateria?.destacado} class="accent-amarillo" />
+          Destacada (va en la portada)
+        </label>
+        <label class="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            name="conMantenimiento"
+            checked={bateria ? !bateria.libreMantenimiento : false}
+            class="accent-amarillo"
+          />
+          Requiere control de nivel
+        </label>
+      </div>
+    </div>
+  </details>
 
   <div class="flex items-center gap-4 pt-1">
     <button

@@ -8,10 +8,13 @@ const baterias = await getAllBaterias(db);
 ---
 
 <AdminLayout title="Baterías">
-  <div class="flex items-center justify-between pb-5">
-    <p class="text-sm text-plata/60">
-      {baterias.length} {baterias.length === 1 ? 'batería' : 'baterías'}
-    </p>
+  <div class="flex flex-wrap items-center gap-3 pb-5">
+    <input
+      type="search"
+      data-filtro
+      placeholder={`Buscar entre ${baterias.length} baterías`}
+      class="min-w-0 flex-1 rounded-fila border border-white/15 bg-admin-campo px-3 py-3 text-[15px] text-white outline-none focus:border-amarillo"
+    />
     <a
       href="/admin/baterias/nueva"
       class="rounded-card bg-amarillo px-5 py-3 text-sm font-bold text-carbon transition-colors hover:bg-amarilloOscuro"
@@ -28,7 +31,10 @@ const baterias = await getAllBaterias(db);
     ) : (
       <div class="divide-y divide-white/10 overflow-hidden rounded-card border border-white/10 bg-admin-panel">
         {baterias.map((b) => (
-          <a href={`/admin/baterias/${b.id}`} class="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-white/5">
+          <a
+            href={`/admin/baterias/${b.id}`}
+            data-fila={`${b.codigo} ${b.nombre} ${b.aplicacion ?? ''}`.toLowerCase()}
+            class="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-white/5">
             <img
               src={fotoPrincipal(b)}
               alt=""
@@ -53,3 +59,15 @@ const baterias = await getAllBaterias(db);
     )
   }
 </AdminLayout>
+
+<script>
+  const filtro = document.querySelector<HTMLInputElement>('[data-filtro]');
+  const filas = document.querySelectorAll<HTMLElement>('[data-fila]');
+  filtro?.addEventListener('input', () => {
+    const palabras = filtro.value.toLowerCase().split(/\s+/).filter(Boolean);
+    for (const fila of filas) {
+      const texto = fila.dataset.fila ?? '';
+      fila.hidden = !palabras.every((p) => texto.includes(p));
+    }
+  });
+</script>
